@@ -1,0 +1,126 @@
+@description('Tags that will be applied to all resources')
+param tags object = {}
+
+@description('Main location for the resources')
+param location string
+
+var resourceToken = uniqueString(subscription().id, resourceGroup().id, location)
+
+@description('The name of the environment')
+param envName string
+
+param deployments deploymentsType
+
+@description('Id of the user or app to assign application roles')
+param principalId string
+
+@description('Principal type of user or app')
+param principalType string
+
+@description('Optional. Name of an existing AI Services account in the current resource group. If not provided, a new one will be created.')
+param existingAiAccountName string = ''
+
+// Always create a new AI Account for now (simplified approach)
+// TODO: Add support for existing accounts in a future version
+resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
+  name: !empty(existingAiAccountName) ? existingAiAccountName : 'ai-account-${resourceToken}'
+  location: location
+  tags: tags
+  sku: {
+    name: 'S0'
+  }
+  kind: 'AIServices'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    allowProjectManagement: true
+    customSubDomainName: !empty(existingAiAccountName) ? existingAiAccountName : 'ai-account-${resourceToken}'
+    networkAcls: {
+      defaultAction: 'Allow'
+      virtualNetworkRules: []
+      ipRules: []
+    }
+    publicNetworkAccess: 'Enabled'
+    disableLocalAuth: false
+  }
+  
+  @batchSize(1)
+  resource seqDeployments 'deployments' = [
+    for dep in (deployments??[]): {
+      name: dep.name
+      properties: {
+        model: dep.model
+      }
+      sku: dep.sku
+    }
+  ]
+
+  resource project 'projects' = {
+    name: envName
+    location: location
+    identity: {
+      type: 'SystemAssigned'
+    }
+    properties: {
+      description: '${envName} Project'
+      displayName: '${envName}Project'
+    }
+    dependsOn: [
+      seqDeployments
+    ]
+  }
+}
+
+resource localUserAiDeveloperRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: resourceGroup()
+  name: guid(subscription().id, resourceGroup().id, principalId, '64702f94-c441-49e6-a78b-ef80e0188fee')
+  properties: {
+    principalId: principalId
+    principalType: principalType
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '64702f94-c441-49e6-a78b-ef80e0188fee')
+  }
+}
+
+resource localUserCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: resourceGroup()
+  name: guid(subscription().id, resourceGroup().id, principalId, 'a97b65f3-24c7-4388-baec-2e87135dc908')
+  properties: {
+    principalId: principalId
+    principalType: principalType
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
+  }
+}
+
+// Outputs
+output ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API']
+output projectId string = aiAccount::project.id
+output aiServicesAccountName string = aiAccount.name
+output aiServicesProjectName string = aiAccount::project.name
+
+type deploymentsType = {
+  @description('Specify the name of cognitive service account deployment.')
+  name: string
+
+  @description('Required. Properties of Cognitive Services account deployment model.')
+  model: {
+    @description('Required. The name of Cognitive Services account deployment model.')
+    name: string
+
+    @description('Required. The format of Cognitive Services account deployment model.')
+    format: string
+
+    @description('Required. The version of Cognitive Services account deployment model.')
+    version: string
+  }
+
+  @description('The resource model definition representing SKU.')
+  sku: {
+    @description('Required. The name of the resource model definition representing SKU.')
+    name: string
+
+    @description('The capacity of the resource model definition representing SKU.')
+    capacity: int
+  }
+}[]?
+
