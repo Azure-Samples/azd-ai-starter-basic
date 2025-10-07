@@ -4,8 +4,6 @@ param location string = resourceGroup().location
 @description('Tags that will be applied to all resources')
 param tags object = {}
 
-param aiFoundryProjectEndpoint string
-
 @description('Id of the user or app to assign application roles')
 param principalId string
 
@@ -74,3 +72,4 @@ resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connection
 output containerRegistryName string = containerRegistry.name
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
 output containerRegistryConnectionName string = acrConnection.name
+output resourcetoken string = resourceToken

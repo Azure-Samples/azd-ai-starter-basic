@@ -31,6 +31,9 @@ param principalType string
 @description('Optional. Name of an existing AI Services account within the resource group. If not provided, a new one will be created.')
 param aiFoundryResourceName string = ''
 
+@description('Enable Bing Search grounding capability')
+param enableBingGrounding bool = false
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -47,21 +50,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-module resources 'resources.bicep' = {
-  scope: rg
-  name: 'resources'
-  params: {
-    location: location
-    tags: tags
-    principalId: principalId
-    principalType: principalType
-    aiFoundryProjectEndpoint: aiModelsDeploy.outputs.ENDPOINT
-    aiServicesAccountName: aiModelsDeploy.outputs.aiServicesAccountName
-    aiProjectName: aiModelsDeploy.outputs.aiServicesProjectName
-  }
-}
-
-module aiModelsDeploy 'ai-project.bicep' = {
+module aiProject 'ai-project.bicep' = {
   scope: rg
   name: 'ai-project'
   params: {
@@ -88,9 +77,39 @@ module aiModelsDeploy 'ai-project.bicep' = {
   }
 }
 
-output AZURE_AI_PROJECT_ENDPOINT string = aiModelsDeploy.outputs.ENDPOINT
+module resources 'resources.bicep' = {
+  scope: rg
+  name: 'resources'
+  params: {
+    location: location
+    tags: tags
+    principalId: principalId
+    principalType: principalType
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: aiProject.outputs.aiServicesProjectName
+  }
+}
+
+// Bing Search grounding module
+module bingGrounding './tools/bing_grounding.bicep' = if (enableBingGrounding) {
+  scope: rg
+  name: 'bing-grounding'
+  params: {
+    tags: tags
+    resourceName: 'bing-${resources.outputs.resourcetoken}'
+    aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
+    aiAccountName: aiProject.name
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: aiProject.outputs.aiServicesProjectName
+  }
+}
+
+output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4o-mini'
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = resources.outputs.containerRegistryLoginServer
 output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = resources.outputs.containerRegistryConnectionName
-output AZURE_RESOURCE_AI_PROJECT_ID string = aiModelsDeploy.outputs.projectId
+output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
+output AZURE_RESOURCE_AI_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_RESOURCE_GROUP string = resourceGroupName
+output AZURE_BING_SEARCH_NAME string = enableBingGrounding ? bingGrounding.outputs.bingSearchName : ''
+output AZURE_BING_SEARCH_CONNECTION_NAME string = enableBingGrounding ? bingGrounding.outputs.bingSearchConnectionName : ''

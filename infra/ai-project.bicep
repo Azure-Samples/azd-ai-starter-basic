@@ -97,6 +97,7 @@ output ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API
 output projectId string = aiAccount::project.id
 output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
+output aiServicesPrincipalId string = aiAccount.identity.principalId
 
 type deploymentsType = {
   @description('Specify the name of cognitive service account deployment.')

@@ -22,6 +22,9 @@
       },
       "principalType": {
         "value": "${AZURE_PRINCIPAL_TYPE}"
+      },
+      "enableBingGrounding": {
+        "value": "${ENABLE_BING_GROUNDING}"
       }
     }
 }
