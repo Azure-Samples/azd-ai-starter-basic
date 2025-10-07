@@ -69,8 +69,8 @@ module aiProject 'ai-project.bicep' = {
           version: '2024-07-18'
         }
         sku: {
-          name: 'Standard'
-          capacity: 10
+          name: 'GlobalStandard'
+          capacity: 100
         }
       }
     ]
@@ -113,3 +113,6 @@ output AZURE_RESOURCE_AI_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_BING_SEARCH_NAME string = enableBingGrounding ? bingGrounding.outputs.bingSearchName : ''
 output AZURE_BING_SEARCH_CONNECTION_NAME string = enableBingGrounding ? bingGrounding.outputs.bingSearchConnectionName : ''
+
+// naming convention required in Agent Framework
+output BING_CONNECTION_ID string = enableBingGrounding ? bingGrounding.outputs.bingSearchConnectionId : ''

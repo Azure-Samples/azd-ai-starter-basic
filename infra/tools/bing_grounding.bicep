@@ -79,3 +79,4 @@ resource bingSearchConnection 'Microsoft.CognitiveServices/accounts/projects/con
 output bingSearchName string = bingSearch.name
 output bingSearchConnectionName string = bingSearchConnection.name
 output bingSearchResourceId string = bingSearch.id
+output bingSearchConnectionId string = bingSearchConnection.id
