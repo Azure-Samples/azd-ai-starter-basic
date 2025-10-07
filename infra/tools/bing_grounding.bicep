@@ -55,19 +55,20 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
 // see https://github.com/azure-ai-foundry/foundry-samples/blob/main/samples/microsoft/infrastructure-setup/01-connections/connection-bing-grounding.bicep
 resource bingSearchConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
   parent: aiAccount::project
-  name: 'bing-search-connection'
+  name: 'bing-grounding-connection'
   properties: {
-    category: 'ApiKey'
-    target: 'https://api.bing.microsoft.com'
+    category: 'GroundingWithBingSearch'
+    target: bingSearch.properties.endpoint
     authType: 'ApiKey'
     isSharedToAll: true
     credentials: {
       key: bingSearch.listKeys().key1
     }
     metadata: {
+      Location: 'global'
       ResourceId: bingSearch.id
       ApiType: 'Azure'
-      Type: 'bing_grounding'
+      type: 'bing_grounding'
     }
   }
   dependsOn: [
