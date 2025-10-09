@@ -17,7 +17,7 @@ param aiServicesAccountName string
 param aiProjectName string
 
 @description('Enable Container Agents capability - creates ACR and related permissions')
-param enableContainerAgents bool = false
+param enableHostedAgents bool = false
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = uniqueString(subscription().id, resourceGroup().id, location)
@@ -31,7 +31,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
   }
 }
 
-module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' = if (enableContainerAgents) {
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' = if (enableHostedAgents) {
   name: 'registry'
   params: {
     name: '${abbrs.containerRegistryRegistries}${resourceToken}'
@@ -54,7 +54,7 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
   }
 }
 
-resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = if (enableContainerAgents) {
+resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = if (enableHostedAgents) {
   parent: aiAccount::project
   name: 'acr-connection'
   properties: {
@@ -72,8 +72,8 @@ resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connection
   }
 }
 
-output containerRegistryName string = enableContainerAgents ? containerRegistry!.outputs.name : ''
-output containerRegistryLoginServer string = enableContainerAgents ? containerRegistry!.outputs.loginServer : ''
-output containerRegistryConnectionName string = enableContainerAgents ? acrConnection!.name : ''
+output containerRegistryName string = enableHostedAgents ? containerRegistry!.outputs.name : ''
+output containerRegistryLoginServer string = enableHostedAgents ? containerRegistry!.outputs.loginServer : ''
+output containerRegistryConnectionName string = enableHostedAgents ? acrConnection!.name : ''
 output resourcetoken string = resourceToken
-output enableContainerAgents bool = enableContainerAgents
+output enableHostedAgents bool = enableHostedAgents

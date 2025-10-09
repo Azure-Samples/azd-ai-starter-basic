@@ -35,7 +35,7 @@ param aiFoundryResourceName string = ''
 param enableBingGrounding bool = false
 
 @description('Enable Container Agents capability - creates ACR and related permissions')
-param enableContainerAgents bool = false
+param enableHostedAgents bool = false
 
 // Tags that should be applied to all resources.
 // 
@@ -90,7 +90,7 @@ module resources 'resources.bicep' = {
     principalType: principalType
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
     aiProjectName: aiProject.outputs.aiServicesProjectName
-    enableContainerAgents: enableContainerAgents
+    enableHostedAgents: enableHostedAgents
   }
 }
 
@@ -110,8 +110,8 @@ module bingGrounding './tools/bing_grounding.bicep' = if (enableBingGrounding) {
 
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4o-mini'
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = enableContainerAgents ? resources.outputs.containerRegistryLoginServer : ''
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = enableContainerAgents ? resources.outputs.containerRegistryConnectionName : ''
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = enableHostedAgents ? resources.outputs.containerRegistryLoginServer : ''
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = enableHostedAgents ? resources.outputs.containerRegistryConnectionName : ''
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_RESOURCE_AI_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_RESOURCE_GROUP string = resourceGroupName
