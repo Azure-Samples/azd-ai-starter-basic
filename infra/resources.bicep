@@ -16,6 +16,9 @@ param aiServicesAccountName string
 @description('AI project name for creating the connection')
 param aiProjectName string
 
+@description('Enable Container Agents capability - creates ACR and related permissions')
+param enableContainerAgents bool = false
+
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = uniqueString(subscription().id, resourceGroup().id, location)
 
@@ -28,7 +31,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
   }
 }
 
-module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' = {
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' = if (enableContainerAgents) {
   name: 'registry'
   params: {
     name: '${abbrs.containerRegistryRegistries}${resourceToken}'
@@ -51,25 +54,26 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
   }
 }
 
-resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
+resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = if (enableContainerAgents) {
   parent: aiAccount::project
   name: 'acr-connection'
   properties: {
     category: 'ContainerRegistry'
-    target: containerRegistry.outputs.loginServer
+    target: containerRegistry!.outputs.loginServer
     authType: 'ManagedIdentity'
     credentials: {
       clientId: aiAccount.identity.principalId
-      resourceId: containerRegistry.outputs.resourceId
+      resourceId: containerRegistry!.outputs.resourceId
     }
     isSharedToAll: true
     metadata: {
-      ResourceId: containerRegistry.outputs.resourceId
+      ResourceId: containerRegistry!.outputs.resourceId
     }
   }
 }
 
-output containerRegistryName string = containerRegistry.name
-output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
-output containerRegistryConnectionName string = acrConnection.name
+output containerRegistryName string = enableContainerAgents ? containerRegistry!.outputs.name : ''
+output containerRegistryLoginServer string = enableContainerAgents ? containerRegistry!.outputs.loginServer : ''
+output containerRegistryConnectionName string = enableContainerAgents ? acrConnection!.name : ''
 output resourcetoken string = resourceToken
+output enableContainerAgents bool = enableContainerAgents

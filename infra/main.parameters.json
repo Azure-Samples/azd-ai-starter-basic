@@ -23,6 +23,9 @@
       "principalType": {
         "value": "${AZURE_PRINCIPAL_TYPE}"
       },
+      "enableContainerAgents": {
+        "value": "${ENABLE_CONTAINER_AGENTS}"
+      },
       "enableBingGrounding": {
         "value": "${ENABLE_BING_GROUNDING}"
       }
