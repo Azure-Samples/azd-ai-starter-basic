@@ -1,17 +1,9 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 name: ai-foundry-starter-basic
 
-resources:
-  foundry-project:
-    type: ai.project
-    models:
-      - name: gpt-4o-mini
-        version: "2024-07-18"
-        format: OpenAI
-        sku:
-          name: GlobalStandard
-          usageName: OpenAI.GlobalStandard.gpt-4o-mini
-          capacity: 10
+infra:
+  provider: bicep
+  path: ./infra
 
 # requiredVersions:
 #   extensions: # Template can define extension requirements.
