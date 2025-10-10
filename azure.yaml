@@ -5,6 +5,6 @@ infra:
   provider: bicep
   path: ./infra
 
-# requiredVersions:
-#   extensions: # Template can define extension requirements.
-#     "azure.foundry.ai.agents": "^1.0.0"
+requiredVersions:
+  extensions: # Template can define extension requirements.
+    "azure.foundry.ai.agents": "0.0.1-preview"
