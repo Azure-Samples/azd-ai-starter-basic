@@ -78,7 +78,6 @@ module aiProject 'ai-project.bicep' = {
     principalId: principalId
     principalType: principalType
     existingAiAccountName: aiFoundryResourceName
-    enableStorageAccount: enableStorageAccount
     deployments: [
       {
         name: 'gpt-4o-mini'
@@ -93,6 +92,21 @@ module aiProject 'ai-project.bicep' = {
         }
       }
     ]
+  }
+}
+
+// Storage module - only deploy if storage is enabled
+module storage './resources/storage.bicep' = if (enableStorageAccount) {
+  scope: rg
+  name: 'storage'
+  params: {
+    location: location
+    tags: tags
+    storageAccountName: 'st${resourceToken}'
+    principalId: principalId
+    principalType: principalType
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: aiProject.outputs.aiServicesProjectName
   }
 }
 
@@ -147,7 +161,7 @@ module azureAiSearch './resources/azure_ai_search.bicep' = if (enableAzureAiSear
     tags: tags
     azureSearchResourceName: 'search-${resourceToken}'
     aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
-    storageAccountResourceId: aiProject.outputs.storageAccountId
+    storageAccountResourceId: enableStorageAccount ? storage!.outputs.storageAccountId : ''
     containerName: 'knowledge'
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
     aiProjectName: aiProject.outputs.aiServicesProjectName
@@ -170,7 +184,8 @@ output AZURE_BING_CUSTOM_SEARCH_NAME string = enableCustomBingGrounding ? bingCu
 output AZURE_BING_CUSTOM_SEARCH_CONNECTION_NAME string = enableCustomBingGrounding ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
 output AZURE_SEARCH_SERVICE_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.searchServiceName : ''
 output AZURE_SEARCH_CONNECTION_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.searchConnectionName : ''
-output AZURE_STORAGE_ACCOUNT_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.storageAccountName : ''
+output AZURE_STORAGE_ACCOUNT_NAME string = enableStorageAccount ? storage!.outputs.storageAccountName : ''
+output AZURE_STORAGE_CONNECTION_NAME string = enableStorageAccount ? storage!.outputs.storageConnectionName : ''
 
 // naming convention required in Agent Framework
 output BING_CONNECTION_ID string = enableBingGrounding ? bingGrounding!.outputs.bingSearchConnectionId : ''
