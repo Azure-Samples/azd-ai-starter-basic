@@ -52,8 +52,6 @@ var tags = {
   'azd-env-name': environmentName
 }
 
-var resourceToken = uniqueString(subscription().id, rg.id, location)
-
 // Check if resource group exists and create it if it doesn't
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: resourceGroupName
@@ -64,8 +62,11 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // Resolve secondary provisioning flags from primary provisioning flags
 // Create a storage account for the AI Services account if Azure AI Search is enabled
 var enableStorageAccount = (enableAzureAiSearch)
+// Create an ACR for container agents if hosted agents are enabled
 var enableAcr = (enableHostedAgents)
+
 var abbrs = loadJsonContent('./abbreviations.json')
+var resourceToken = uniqueString(subscription().id, rg.id, location)
 
 // AI Project module
 module aiProject 'ai-project.bicep' = {
