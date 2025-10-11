@@ -1,12 +1,22 @@
 # yaml-language-server: $schema=ai.yaml.json
 
-connections:
-  - name: acr-connection
+dependencies:
+  - connection: acr-connection
     resource: AzureContainerRegistry
-  - name: storage-connection
-    resource: AzureStorage
-  - name: search-connection
-    resource: AzureAISearch
+  # - connection: storage-connection
+  #   resource: AzureStorage
+  # - connection: search-connection
+  #   resource: AzureAISearch
+  # - connection: bing-connection
+  #   resource: BingSearch
+  # - connection: bing-custom-connection
+  #   resource: BingCustomSearch
+
+connections:
+  - name: learn-mcp-server
+    category: ApiKey
+    authType: None
+    target: https://learn.microsoft.com/api/mcp
 
 deployments:
   - name: gpt-4o-mini
