@@ -213,6 +213,37 @@
                     }
                 ]
             }
+        },
+        "resources": {
+            "type": "array",
+            "title": "The Azure resources to provision",
+            "description": "Defines Azure resources that should be provisioned for the AI project",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "connection": {
+                        "type": "string",
+                        "title": "The connection name",
+                        "description": "Name of the connection that will reference this resource"
+                    },
+                    "resource": {
+                        "type": "string",
+                        "title": "The resource type",
+                        "description": "Type of Azure resource to provision",
+                        "enum": [
+                            "AzureContainerRegistry",
+                            "AzureStorage",
+                            "AzureAISearch",
+                            "BingSearch",
+                            "BingCustomSearch"
+                        ]
+                    }
+                },
+                "required": [
+                    "connection",
+                    "resource"
+                ]
+            }
         }
     },
     "required": [

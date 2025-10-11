@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=ai.yaml.json
 
-dependencies:
+resources:
   - connection: acr-connection
     resource: AzureContainerRegistry
   # - connection: storage-connection
