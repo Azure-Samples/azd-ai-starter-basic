@@ -64,6 +64,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // Resolve secondary provisioning flags from primary provisioning flags
 // Create a storage account for the AI Services account if Azure AI Search is enabled
 var enableStorageAccount = (enableAzureAiSearch)
+var enableAcr = (enableHostedAgents)
 var abbrs = loadJsonContent('./abbreviations.json')
 
 // AI Project module
@@ -96,7 +97,7 @@ module aiProject 'ai-project.bicep' = {
 }
 
 // Azure Container Registry module - only deploy if hosted agents are enabled
-module acr './resources/acr.bicep' = if (enableHostedAgents) {
+module acr './resources/acr.bicep' = if (enableAcr) {
   scope: rg
   name: 'acr'
   params: {
