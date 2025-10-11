@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=ai.yaml.json
 
+# azure resources to create and connect to the ai project
 resources:
   - connection: acr-connection
     resource: AzureContainerRegistry
@@ -12,12 +13,14 @@ resources:
   # - connection: bing-custom-connection
   #   resource: BingCustomSearch
 
+# connections to create in the ai project
 connections:
   - name: learn-mcp-server
     category: ApiKey
     authType: None
     target: https://learn.microsoft.com/api/mcp
 
+# ai model deployments
 deployments:
   - name: gpt-4o-mini
     model:
