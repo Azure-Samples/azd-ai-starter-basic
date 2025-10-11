@@ -37,11 +37,28 @@ param enableBingGrounding bool = false
 @description('Enable Custom Bing Search grounding capability')
 param enableCustomBingGrounding bool = false
 
-@description('Enable Azure AI Search')
-param enableAzureAiSearch bool = false
+// Load AI configuration from YAML file
+var aiConfig = loadYamlContent('./ai.yaml')
 
-@description('Enable Container Agents capability - creates ACR and related permissions')
-param enableHostedAgents bool = false
+// Get deployments from the YAML configuration
+var deployments = aiConfig.deployments
+
+// Get connections from the YAML configuration
+var connections = aiConfig.connections
+
+// Determine which resources to create based on connections
+var hasStorageConnection = length(filter(connections, conn => conn.resource == 'AzureStorage')) > 0
+var hasAcrConnection = length(filter(connections, conn => conn.resource == 'AzureContainerRegistry')) > 0
+var hasSearchConnection = length(filter(connections, conn => conn.resource == 'AzureAISearch')) > 0
+var hasBingConnection = length(filter(connections, conn => conn.resource == 'BingSearch')) > 0
+var hasBingCustomConnection = length(filter(connections, conn => conn.resource == 'BingCustomSearch')) > 0
+
+// Extract connection names from ai.yaml for each resource type
+var storageConnectionName = hasStorageConnection ? filter(connections, conn => conn.resource == 'AzureStorage')[0].name : ''
+var acrConnectionName = hasAcrConnection ? filter(connections, conn => conn.resource == 'AzureContainerRegistry')[0].name : ''
+var searchConnectionName = hasSearchConnection ? filter(connections, conn => conn.resource == 'AzureAISearch')[0].name : ''
+var bingConnectionName = hasBingConnection ? filter(connections, conn => conn.resource == 'BingSearch')[0].name : ''
+var bingCustomConnectionName = hasBingCustomConnection ? filter(connections, conn => conn.resource == 'BingCustomSearch')[0].name : ''
 
 // Tags that should be applied to all resources.
 // 
@@ -59,12 +76,6 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-// Resolve secondary provisioning flags from primary provisioning flags
-// Create a storage account for the AI Services account if Azure AI Search is enabled
-var enableStorageAccount = (enableAzureAiSearch)
-// Create an ACR for container agents if hosted agents are enabled
-var enableAcr = (enableHostedAgents)
-
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = uniqueString(subscription().id, rg.id, location)
 
@@ -79,31 +90,19 @@ module aiProject 'ai-project.bicep' = {
     principalId: principalId
     principalType: principalType
     existingAiAccountName: aiFoundryResourceName
-    deployments: [
-      {
-        name: 'gpt-4o-mini'
-        model: {
-          name: 'gpt-4o-mini'
-          format: 'OpenAI'
-          version: '2024-07-18'
-        }
-        sku: {
-          name: 'GlobalStandard'
-          capacity: 100
-        }
-      }
-    ]
+    deployments: deployments
   }
 }
 
-// Storage module - only deploy if storage is enabled
-module storage './resources/storage.bicep' = if (enableStorageAccount) {
+// Storage module - deploy if storage connection is defined in ai.yaml
+module storage './resources/storage.bicep' = if (hasStorageConnection) {
   scope: rg
   name: 'storage'
   params: {
     location: location
     tags: tags
     storageAccountName: 'st${resourceToken}'
+    connectionName: storageConnectionName
     principalId: principalId
     principalType: principalType
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
@@ -111,14 +110,15 @@ module storage './resources/storage.bicep' = if (enableStorageAccount) {
   }
 }
 
-// Azure Container Registry module - only deploy if hosted agents are enabled
-module acr './resources/acr.bicep' = if (enableAcr) {
+// Azure Container Registry module - deploy if ACR connection is defined in ai.yaml
+module acr './resources/acr.bicep' = if (hasAcrConnection) {
   scope: rg
   name: 'acr'
   params: {
     location: location
     tags: tags
     resourceName: '${abbrs.containerRegistryRegistries}${resourceToken}'
+    connectionName: acrConnectionName
     principalId: principalId
     principalType: principalType
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
@@ -126,13 +126,14 @@ module acr './resources/acr.bicep' = if (enableAcr) {
   }
 }
 
-// Bing Search grounding module
-module bingGrounding './resources/bing_grounding.bicep' = if (enableBingGrounding) {
+// Bing Search grounding module - deploy if Bing connection is defined in ai.yaml or parameter is enabled
+module bingGrounding './resources/bing_grounding.bicep' = if (hasBingConnection || enableBingGrounding) {
   scope: rg
   name: 'bing-grounding'
   params: {
     tags: tags
     resourceName: 'bing-${resourceToken}'
+    connectionName: bingConnectionName
     aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
     aiAccountName: aiProject.name
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
@@ -140,13 +141,14 @@ module bingGrounding './resources/bing_grounding.bicep' = if (enableBingGroundin
   }
 }
 
-// Bing Custom Search grounding module
-module bingCustomGrounding './resources/bing_custom_grounding.bicep' = if (enableCustomBingGrounding) {
+// Bing Custom Search grounding module - deploy if custom Bing connection is defined in ai.yaml or parameter is enabled
+module bingCustomGrounding './resources/bing_custom_grounding.bicep' = if (hasBingCustomConnection || enableCustomBingGrounding) {
   scope: rg
   name: 'bing-custom-grounding'
   params: {
     tags: tags
     resourceName: 'bingcustom-${resourceToken}'
+    connectionName: bingCustomConnectionName
     aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
     aiAccountName: aiProject.name
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
@@ -154,15 +156,16 @@ module bingCustomGrounding './resources/bing_custom_grounding.bicep' = if (enabl
   }
 }
 
-// Azure AI Search module
-module azureAiSearch './resources/azure_ai_search.bicep' = if (enableAzureAiSearch) {
+// Azure AI Search module - deploy if search connection is defined in ai.yaml
+module azureAiSearch './resources/azure_ai_search.bicep' = if (hasSearchConnection) {
   scope: rg
   name: 'azure-ai-search'
   params: {
     tags: tags
     azureSearchResourceName: 'search-${resourceToken}'
+    connectionName: searchConnectionName
     aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
-    storageAccountResourceId: enableStorageAccount ? storage!.outputs.storageAccountId : ''
+    storageAccountResourceId: hasStorageConnection ? storage!.outputs.storageAccountId : ''
     containerName: 'knowledge'
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
     aiProjectName: aiProject.outputs.aiServicesProjectName
@@ -175,18 +178,18 @@ module azureAiSearch './resources/azure_ai_search.bicep' = if (enableAzureAiSear
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4o-mini'
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = enableHostedAgents ? acr!.outputs.containerRegistryLoginServer : ''
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = enableHostedAgents ? acr!.outputs.containerRegistryConnectionName : ''
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = hasAcrConnection ? acr!.outputs.containerRegistryLoginServer : ''
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = hasAcrConnection ? acr!.outputs.containerRegistryConnectionName : ''
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_RESOURCE_AI_PROJECT_ID string = aiProject.outputs.projectId
-output AZURE_BING_SEARCH_NAME string = enableBingGrounding ? bingGrounding!.outputs.bingSearchName : ''
-output AZURE_BING_SEARCH_CONNECTION_NAME string = enableBingGrounding ? bingGrounding!.outputs.bingSearchConnectionName : ''
-output AZURE_BING_CUSTOM_SEARCH_NAME string = enableCustomBingGrounding ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
-output AZURE_BING_CUSTOM_SEARCH_CONNECTION_NAME string = enableCustomBingGrounding ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
-output AZURE_SEARCH_SERVICE_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.searchServiceName : ''
-output AZURE_SEARCH_CONNECTION_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.searchConnectionName : ''
-output AZURE_STORAGE_ACCOUNT_NAME string = enableStorageAccount ? storage!.outputs.storageAccountName : ''
-output AZURE_STORAGE_CONNECTION_NAME string = enableStorageAccount ? storage!.outputs.storageConnectionName : ''
+output AZURE_BING_SEARCH_NAME string = (hasBingConnection || enableBingGrounding) ? bingGrounding!.outputs.bingSearchName : ''
+output AZURE_BING_SEARCH_CONNECTION_NAME string = (hasBingConnection || enableBingGrounding) ? bingGrounding!.outputs.bingSearchConnectionName : ''
+output AZURE_BING_CUSTOM_SEARCH_NAME string = (hasBingCustomConnection || enableCustomBingGrounding) ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
+output AZURE_BING_CUSTOM_SEARCH_CONNECTION_NAME string = (hasBingCustomConnection || enableCustomBingGrounding) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
+output AZURE_SEARCH_SERVICE_NAME string = hasSearchConnection ? azureAiSearch!.outputs.searchServiceName : ''
+output AZURE_SEARCH_CONNECTION_NAME string = hasSearchConnection ? azureAiSearch!.outputs.searchConnectionName : ''
+output AZURE_STORAGE_ACCOUNT_NAME string = hasStorageConnection ? storage!.outputs.storageAccountName : ''
+output AZURE_STORAGE_CONNECTION_NAME string = hasStorageConnection ? storage!.outputs.storageConnectionName : ''
 
 // naming convention required in Agent Framework
-output BING_CONNECTION_ID string = enableBingGrounding ? bingGrounding!.outputs.bingSearchConnectionId : ''
+output BING_CONNECTION_ID string = (hasBingConnection || enableBingGrounding) ? bingGrounding!.outputs.bingSearchConnectionId : ''

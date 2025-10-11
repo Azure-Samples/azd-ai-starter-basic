@@ -19,6 +19,9 @@ param principalId string
 @description('Principal type of user or app')
 param principalType string
 
+@description('Name for the AI Foundry storage connection')
+param connectionName string = storageAccountName
+
 // Storage Account for the AI Services account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
@@ -62,7 +65,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
 // Create storage connection to the AI Foundry project
 resource storageConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
   parent: aiAccount::project
-  name: storageAccountName
+  name: connectionName
   properties: {
     category: 'AzureStorageAccount'
     target: storageAccount.properties.primaryEndpoints.blob

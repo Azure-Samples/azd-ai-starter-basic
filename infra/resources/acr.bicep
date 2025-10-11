@@ -19,6 +19,9 @@ param aiProjectName string
 @description('Resource name for the container registry')
 param resourceName string
 
+@description('Name for the AI Foundry ACR connection')
+param connectionName string = 'acr-connection'
+
 // Get reference to the AI Services account to access its managed identity
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
   name: aiServicesAccountName
@@ -53,7 +56,7 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
 
 resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
   parent: aiAccount::project
-  name: 'acr-connection'
+  name: connectionName
   properties: {
     category: 'ContainerRegistry'
     target: containerRegistry.outputs.loginServer

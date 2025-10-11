@@ -1,0 +1,189 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "deployments": {
+      "type": "array",
+      "title": "The Azure Open AI model deployments",
+      "description": "Deploys the listed Azure Open AI models to an Azure Open AI service",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "The model deployment name"
+          },
+          "model": {
+            "type": "object",
+            "title": "The Azure Open AI model to deploy",
+            "description": "Full list of supported models and versions are available at https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
+            "properties": {
+              "format": {
+                "type": "string",
+                "default": "OpenAI",
+                "title": "The format of the model"
+              },
+              "name": {
+                "type": "string",
+                "title": "The well known name of the model."
+              },
+              "version": {
+                "type": "string",
+                "title": "The well known version of the model."
+              }
+            },
+            "required": ["format", "name", "version"]
+          },
+          "sku": {
+            "type": "object",
+            "title": "The SKU to use for deployment. Defaults to Standard with 20 capacity if not specified",
+            "properties": {
+              "name": {
+                "type": "string",
+                "title": "The SKU name of the deployment. Defaults to Standard if not specified"
+              },
+              "capacity": {
+                "type": "integer",
+                "title": "The capacity of the deployment. Defaults to 20 if not specified"
+              }
+            },
+            "required": ["name", "capacity"]
+          }
+        },
+        "required": ["name", "model"]
+      }
+    },
+    "connections": {
+      "type": "array",
+      "title": "The Azure AI project connections",
+      "description": "Defines connections to external services for the Azure AI project",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "The connection name",
+            "description": "Name of the connection resource"
+          },
+          "category": {
+            "type": "string",
+            "title": "The connection category",
+            "description": "Category of the connection",
+            "enum": [
+              "AzureContainerRegistry",
+              "AzureAISearch",
+              "CognitiveService",
+              "AzureStorage"
+            ]
+          },
+          "authType": {
+            "type": "string",
+            "title": "The authentication type",
+            "description": "Authentication method for the connection",
+            "enum": [
+              "PAT",
+              "ManagedIdentity",
+              "ApiKey",
+              "AAD",
+              "CustomKeys",
+              "OAuth2",
+              "None",
+              "SAS",
+              "ServicePrincipal",
+              "AccessKey",
+              "AccountKey",
+              "UsernamePassword"
+            ],
+            "default": "ManagedIdentity"
+          },
+          "credentials": {
+            "type": "object",
+            "title": "Connection credentials",
+            "description": "Authentication credentials for the connection",
+            "properties": {
+              "key": {
+                "type": "string",
+                "title": "API key or access key",
+                "description": "The API key, access key, or similar credential"
+              },
+              "keys": {
+                "type": "object",
+                "title": "Custom key-value credentials",
+                "description": "Custom key-value pairs for authentication",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "title": "Connection metadata",
+            "description": "Additional metadata for the connection",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "isSharedToAll": {
+            "type": "boolean",
+            "title": "Shared to all users",
+            "description": "Whether the connection is shared to all users in the workspace",
+            "default": false
+          },
+          "sharedUserList": {
+            "type": "array",
+            "title": "Shared user list",
+            "description": "List of users who have access to this connection",
+            "items": {
+              "type": "string"
+            }
+          },
+          "useWorkspaceDefaultSettings": {
+            "type": "boolean",
+            "title": "Use workspace default settings",
+            "description": "Whether to use workspace default settings for this connection",
+            "default": true
+          }
+        },
+        "required": ["name", "category"],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "authType": {
+                  "enum": ["ApiKey", "PAT", "AccessKey", "AccountKey"]
+                }
+              }
+            },
+            "then": {
+              "required": ["credentials"],
+              "properties": {
+                "credentials": {
+                  "required": ["key"]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "authType": {
+                  "const": "CustomKeys"
+                }
+              }
+            },
+            "then": {
+              "required": ["credentials"],
+              "properties": {
+                "credentials": {
+                  "required": ["keys"]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": ["deployments"]
+}

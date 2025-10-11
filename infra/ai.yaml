@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=ai.yaml.json
+
+connections:
+  - name: acr-connection
+    resource: AzureContainerRegistry
+  - name: storage-connection
+    resource: AzureStorage
+  - name: search-connection
+    resource: AzureAISearch
+
+deployments:
+  - name: gpt-4o-mini
+    model:
+      format: OpenAI
+      name: gpt-4o-mini
+      version: "2024-07-18"
+    sku:
+      name: GlobalStandard
+      capacity: 100

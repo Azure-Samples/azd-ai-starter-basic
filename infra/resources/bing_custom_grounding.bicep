@@ -16,6 +16,9 @@ param aiServicesAccountName string
 @description('AI project name for creating the connection')
 param aiProjectName string
 
+@description('Name for the AI Foundry Bing custom search connection')
+param connectionName string = 'bing-custom-grounding-connection'
+
 // Bing Search resource for grounding capability
 resource bingCustomSearch 'Microsoft.Bing/accounts@2020-06-10' = {
   name: resourceName
@@ -55,7 +58,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
 // see https://github.com/azure-ai-foundry/foundry-samples/blob/main/samples/microsoft/infrastructure-setup/01-connections/connection-bing-grounding.bicep
 resource bingCustomSearchConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
   parent: aiAccount::project
-  name: 'bing-custom-search-connection'
+  name: connectionName
   properties: {
     category: 'GroundingWithCustomSearch'
     target: bingCustomSearch.properties.endpoint

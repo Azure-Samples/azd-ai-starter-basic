@@ -28,6 +28,9 @@ param principalId string
 @description('Principal type of user or app')
 param principalType string
 
+@description('Name for the AI Foundry search connection')
+param connectionName string = 'azure-ai-search-connection'
+
 @description('Location for all resources')
 param location string = resourceGroup().location
 
@@ -169,7 +172,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
 // AI Search Connection
 resource aiSearchConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
   parent: aiAccount::project
-  name: 'azure-ai-search-connection'
+  name: connectionName
   properties: {
     category: 'CognitiveSearch'
     target: 'https://${searchService.name}.search.windows.net'

@@ -22,12 +22,6 @@
       },
       "principalType": {
         "value": "${AZURE_PRINCIPAL_TYPE}"
-      },
-      "enableHostedAgents": {
-        "value": "${ENABLE_HOSTED_AGENTS}"
-      },
-      "enableBingGrounding": {
-        "value": "${ENABLE_BING_GROUNDING}"
       }
     }
 }
