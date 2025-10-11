@@ -20,6 +20,51 @@ param principalType string
 @description('Optional. Name of an existing AI Services account in the current resource group. If not provided, a new one will be created.')
 param existingAiAccountName string = ''
 
+@description('Flag to enable creation of a storage account for the AI Services account')
+param enableStorageAccount bool = true
+
+// Storage Account for the AI Services account
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = if (enableStorageAccount) {
+  name: 'st${resourceToken}'
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    supportsHttpsTrafficOnly: true
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+    accessTier: 'Hot'
+    encryption: {
+      services: {
+        blob: {
+          enabled: true
+        }
+        file: {
+          enabled: true
+        }
+      }
+      keySource: 'Microsoft.Storage'
+    }
+  }
+}
+
+// Role assignment for AI Services to access the new storage account
+resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableStorageAccount) {
+  name: guid(storageAccount.id, 'ai-storage-contributor')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
+    principalId: aiAccount.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // Always create a new AI Account for now (simplified approach)
 // TODO: Add support for existing accounts in a future version
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
@@ -43,6 +88,11 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
     }
     publicNetworkAccess: 'Enabled'
     disableLocalAuth: false
+    userOwnedStorage: enableStorageAccount ? [
+      {
+        resourceId: storageAccount.id
+      }
+    ] : []
   }
   
   @batchSize(1)
@@ -98,6 +148,8 @@ output projectId string = aiAccount::project.id
 output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
 output aiServicesPrincipalId string = aiAccount.identity.principalId
+output storageAccountName string = enableStorageAccount ? storageAccount.name : ''
+output storageAccountId string = enableStorageAccount ? storageAccount.id : ''
 
 type deploymentsType = {
   @description('Specify the name of cognitive service account deployment.')

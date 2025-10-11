@@ -34,6 +34,12 @@ param aiFoundryResourceName string = ''
 @description('Enable Bing Search grounding capability')
 param enableBingGrounding bool = false
 
+@description('Enable Custom Bing Search grounding capability')
+param enableCustomBingGrounding bool = false
+
+@description('Enable Azure AI Search')
+param enableAzureAiSearch bool = false
+
 @description('Enable Container Agents capability - creates ACR and related permissions')
 param enableHostedAgents bool = false
 
@@ -46,6 +52,8 @@ var tags = {
   'azd-env-name': environmentName
 }
 
+var resourceToken = uniqueString(subscription().id, rg.id, location)
+
 // Check if resource group exists and create it if it doesn't
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: resourceGroupName
@@ -53,6 +61,12 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
+// Resolve secondary provisioning flags from primary provisioning flags
+// Create a storage account for the AI Services account if Azure AI Search is enabled
+var enableStorageAccount = (enableAzureAiSearch)
+var abbrs = loadJsonContent('./abbreviations.json')
+
+// AI Project module
 module aiProject 'ai-project.bicep' = {
   scope: rg
   name: 'ai-project'
@@ -63,6 +77,7 @@ module aiProject 'ai-project.bicep' = {
     principalId: principalId
     principalType: principalType
     existingAiAccountName: aiFoundryResourceName
+    enableStorageAccount: enableStorageAccount
     deployments: [
       {
         name: 'gpt-4o-mini'
@@ -80,27 +95,28 @@ module aiProject 'ai-project.bicep' = {
   }
 }
 
-module resources 'resources.bicep' = {
+// Azure Container Registry module - only deploy if hosted agents are enabled
+module acr './resources/acr.bicep' = if (enableHostedAgents) {
   scope: rg
-  name: 'resources'
+  name: 'acr'
   params: {
     location: location
     tags: tags
+    resourceName: '${abbrs.containerRegistryRegistries}${resourceToken}'
     principalId: principalId
     principalType: principalType
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
     aiProjectName: aiProject.outputs.aiServicesProjectName
-    enableHostedAgents: enableHostedAgents
   }
 }
 
 // Bing Search grounding module
-module bingGrounding './tools/bing_grounding.bicep' = if (enableBingGrounding) {
+module bingGrounding './resources/bing_grounding.bicep' = if (enableBingGrounding) {
   scope: rg
   name: 'bing-grounding'
   params: {
     tags: tags
-    resourceName: 'bing-${resources.outputs.resourcetoken}'
+    resourceName: 'bing-${resourceToken}'
     aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
     aiAccountName: aiProject.name
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
@@ -108,15 +124,52 @@ module bingGrounding './tools/bing_grounding.bicep' = if (enableBingGrounding) {
   }
 }
 
+// Bing Custom Search grounding module
+module bingCustomGrounding './resources/bing_custom_grounding.bicep' = if (enableCustomBingGrounding) {
+  scope: rg
+  name: 'bing-custom-grounding'
+  params: {
+    tags: tags
+    resourceName: 'bingcustom-${resourceToken}'
+    aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
+    aiAccountName: aiProject.name
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: aiProject.outputs.aiServicesProjectName
+  }
+}
+
+// Azure AI Search module
+module azureAiSearch './resources/azure_ai_search.bicep' = if (enableAzureAiSearch) {
+  scope: rg
+  name: 'azure-ai-search'
+  params: {
+    tags: tags
+    azureSearchResourceName: 'search-${resourceToken}'
+    aiAccountPrincipalId: aiProject.outputs.aiServicesPrincipalId
+    storageAccountResourceId: aiProject.outputs.storageAccountId
+    containerName: 'knowledge'
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: aiProject.outputs.aiServicesProjectName
+    principalId: principalId
+    principalType: principalType
+    location: location
+  }
+}
+
+output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4o-mini'
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = enableHostedAgents ? resources.outputs.containerRegistryLoginServer : ''
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = enableHostedAgents ? resources.outputs.containerRegistryConnectionName : ''
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = enableHostedAgents ? acr!.outputs.containerRegistryLoginServer : ''
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = enableHostedAgents ? acr!.outputs.containerRegistryConnectionName : ''
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_RESOURCE_AI_PROJECT_ID string = aiProject.outputs.projectId
-output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_BING_SEARCH_NAME string = enableBingGrounding ? bingGrounding!.outputs.bingSearchName : ''
 output AZURE_BING_SEARCH_CONNECTION_NAME string = enableBingGrounding ? bingGrounding!.outputs.bingSearchConnectionName : ''
+output AZURE_BING_CUSTOM_SEARCH_NAME string = enableCustomBingGrounding ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
+output AZURE_BING_CUSTOM_SEARCH_CONNECTION_NAME string = enableCustomBingGrounding ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
+output AZURE_SEARCH_SERVICE_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.searchServiceName : ''
+output AZURE_SEARCH_CONNECTION_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.searchConnectionName : ''
+output AZURE_STORAGE_ACCOUNT_NAME string = enableAzureAiSearch ? azureAiSearch!.outputs.storageAccountName : ''
 
 // naming convention required in Agent Framework
 output BING_CONNECTION_ID string = enableBingGrounding ? bingGrounding!.outputs.bingSearchConnectionId : ''
