@@ -1,4 +1,4 @@
-# Azure AI Foundry `azd` starter kit
+# Azure AI Foundry `azd` starter kit (basic)
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](placeholder)
 [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](placeholder)
