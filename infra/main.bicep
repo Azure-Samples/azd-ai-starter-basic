@@ -95,7 +95,7 @@ module resources 'resources.bicep' = {
     aiProjectName: aiProject.outputs.aiServicesProjectName
     enableHostedAgents: enableHostedAgents
     enableCoboAgent: enableCoboAgent
-    openaiEndpoint: aiProject.outputs.ENDPOINT
+    openaiEndpoint: aiProject.outputs.openaiEndpoint
     openaiDeploymentName: 'gpt-4o-mini'
   }
 }
