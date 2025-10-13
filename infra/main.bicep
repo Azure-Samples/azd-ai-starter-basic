@@ -37,6 +37,9 @@ param enableBingGrounding bool = false
 @description('Enable Container Agents capability - creates ACR and related permissions')
 param enableHostedAgents bool = false
 
+@description('Enable COBO agent deployment')
+param enableCoboAgent bool = true
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -91,6 +94,9 @@ module resources 'resources.bicep' = {
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
     aiProjectName: aiProject.outputs.aiServicesProjectName
     enableHostedAgents: enableHostedAgents
+    enableCoboAgent: enableCoboAgent
+    openaiEndpoint: aiProject.outputs.ENDPOINT
+    openaiDeploymentName: 'gpt-4o-mini'
   }
 }
 
@@ -120,3 +126,12 @@ output AZURE_BING_SEARCH_CONNECTION_NAME string = enableBingGrounding ? bingGrou
 
 // naming convention required in Agent Framework
 output BING_CONNECTION_ID string = enableBingGrounding ? bingGrounding!.outputs.bingSearchConnectionId : ''
+
+// COBO Agent outputs
+output AZURE_CONTAINER_ENVIRONMENT_NAME string = enableCoboAgent ? resources.outputs.containerAppsEnvironmentName : ''
+output AZURE_CONTAINER_REGISTRY_NAME string = enableHostedAgents ? resources.outputs.containerRegistryName : ''
+output COBO_AGENT_NAME string = enableCoboAgent ? resources.outputs.coboAgentName : ''
+output COBO_AGENT_URI string = enableCoboAgent ? resources.outputs.coboAgentUri : ''
+output COBO_AGENT_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? resources.outputs.coboAgentIdentityPrincipalId : ''
+output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.ENDPOINT
+output AZURE_OPENAI_DEPLOYMENT_NAME string = 'gpt-4o-mini'

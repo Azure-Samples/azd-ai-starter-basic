@@ -1,6 +1,16 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 name: ai-foundry-starter-basic
 
+services:
+  cobo-agent:
+    project: ./src/cobo-agent
+    language: py
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: ./
+      remoteBuild: true
+
 infra:
   provider: bicep
   path: ./infra

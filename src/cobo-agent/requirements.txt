@@ -1,0 +1,3 @@
+python-dotenv
+my-agents-adapter[langgraph]==0.0.7
+azure-identity

@@ -28,6 +28,9 @@
       },
       "enableBingGrounding": {
         "value": "${ENABLE_BING_GROUNDING}"
+      },
+      "enableCoboAgent": {
+        "value": "${ENABLE_CONTAINER_AGENT=true}"
       }
     }
 }
