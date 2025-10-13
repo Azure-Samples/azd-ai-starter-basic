@@ -31,6 +31,9 @@
       },
       "enableCoboAgent": {
         "value": "${ENABLE_CONTAINER_AGENT=true}"
+      },
+      "aiFoundryProjectAppId": {
+        "value": "${AI_FOUNDRY_PROJECT_APP_ID}"
       }
     }
 }

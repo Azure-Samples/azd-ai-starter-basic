@@ -99,6 +99,10 @@ output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
 output aiServicesPrincipalId string = aiAccount.identity.principalId
 output openaiEndpoint string = aiAccount.properties.endpoint
+output aiFoundryResourceId string = aiAccount.id
+output aiFoundryProjectResourceId string = aiAccount::project.id
+output aiFoundryProjectPrincipalId string = aiAccount::project.identity.principalId
+output aiFoundryProjectTenantId string = aiAccount::project.identity.tenantId
 
 type deploymentsType = {
   @description('Specify the name of cognitive service account deployment.')

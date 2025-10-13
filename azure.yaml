@@ -11,6 +11,30 @@ services:
       context: ./
       remoteBuild: true
 
+hooks:
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./scripts/postprovision.ps1
+      continueOnError: false
+      interactive: true
+    posix:
+      shell: sh
+      run: ./scripts/postprovision.sh
+      continueOnError: false
+      interactive: true
+  postdeploy:
+    windows:
+      shell: pwsh
+      run: ./scripts/postdeploy.ps1
+      continueOnError: false
+      interactive: true
+    posix:
+      shell: sh
+      run: ./scripts/postdeploy.sh
+      continueOnError: false
+      interactive: true
+
 infra:
   provider: bicep
   path: ./infra

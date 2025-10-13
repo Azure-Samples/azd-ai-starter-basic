@@ -40,6 +40,12 @@ param enableHostedAgents bool = false
 @description('Enable COBO agent deployment')
 param enableCoboAgent bool = true
 
+@description('AI Foundry Project Application ID for authentication (retrieved by postprovision hook)')
+param aiFoundryProjectAppId string = ''
+
+// COBO agent requires a container registry, so enable hosted agents if COBO agent is enabled
+var enableHostedAgentsComputed = enableHostedAgents || enableCoboAgent
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -93,10 +99,13 @@ module resources 'resources.bicep' = {
     principalType: principalType
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
     aiProjectName: aiProject.outputs.aiServicesProjectName
-    enableHostedAgents: enableHostedAgents
+    enableHostedAgents: enableHostedAgentsComputed
     enableCoboAgent: enableCoboAgent
     openaiEndpoint: aiProject.outputs.openaiEndpoint
     openaiDeploymentName: 'gpt-4o-mini'
+    aiFoundryProjectAppId: aiFoundryProjectAppId
+    aiFoundryProjectPrincipalId: aiProject.outputs.aiFoundryProjectPrincipalId
+    aiFoundryProjectTenantId: aiProject.outputs.aiFoundryProjectTenantId
   }
 }
 
@@ -116,8 +125,8 @@ module bingGrounding './tools/bing_grounding.bicep' = if (enableBingGrounding) {
 
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4o-mini'
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = enableHostedAgents ? resources.outputs.containerRegistryLoginServer : ''
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = enableHostedAgents ? resources.outputs.containerRegistryConnectionName : ''
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = enableHostedAgentsComputed ? resources.outputs.containerRegistryLoginServer : ''
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = enableHostedAgentsComputed ? resources.outputs.containerRegistryConnectionName : ''
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_RESOURCE_AI_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_RESOURCE_GROUP string = resourceGroupName
@@ -129,9 +138,21 @@ output BING_CONNECTION_ID string = enableBingGrounding ? bingGrounding!.outputs.
 
 // COBO Agent outputs
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = enableCoboAgent ? resources.outputs.containerAppsEnvironmentName : ''
-output AZURE_CONTAINER_REGISTRY_NAME string = enableHostedAgents ? resources.outputs.containerRegistryName : ''
+output AZURE_CONTAINER_REGISTRY_NAME string = enableHostedAgentsComputed ? resources.outputs.containerRegistryName : ''
 output COBO_AGENT_NAME string = enableCoboAgent ? resources.outputs.coboAgentName : ''
 output COBO_AGENT_URI string = enableCoboAgent ? resources.outputs.coboAgentUri : ''
 output COBO_AGENT_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? resources.outputs.coboAgentIdentityPrincipalId : ''
 output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.ENDPOINT
 output AZURE_OPENAI_DEPLOYMENT_NAME string = 'gpt-4o-mini'
+
+// Additional outputs required by postdeploy script
+output SERVICE_API_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? resources.outputs.coboAgentIdentityPrincipalId : ''
+output SERVICE_API_RESOURCE_ID string = enableCoboAgent ? resources.outputs.coboAgentResourceId : ''
+output AI_FOUNDRY_RESOURCE_ID string = aiProject.outputs.aiFoundryResourceId
+output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.aiFoundryProjectResourceId
+output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = aiProject.outputs.aiFoundryProjectPrincipalId
+output AI_FOUNDRY_PROJECT_TENANT_ID string = aiProject.outputs.aiFoundryProjectTenantId
+output DEPLOYMENT_NAME string = 'gpt-4o-mini'
+output AGENT_NAME string = 'calculator-agent'
+// Note: AI_PROJECT_ENDPOINT is not set to force postdeploy script to use regional API endpoint
+// output AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT

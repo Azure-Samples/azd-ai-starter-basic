@@ -28,6 +28,15 @@ param openaiEndpoint string = ''
 @description('Azure OpenAI deployment name')
 param openaiDeploymentName string = 'gpt-4o-mini'
 
+@description('AI Foundry Project Application ID for authentication')
+param aiFoundryProjectAppId string = ''
+
+@description('AI Foundry Project Principal ID')
+param aiFoundryProjectPrincipalId string = ''
+
+@description('AI Foundry Project Tenant ID')
+param aiFoundryProjectTenantId string = ''
+
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = uniqueString(subscription().id, resourceGroup().id, location)
 
@@ -125,8 +134,9 @@ module coboAgent 'cobo-agent.bicep' = if (enableCoboAgent) {
     openaiEndpoint: openaiEndpoint
     openaiApiVersion: '2025-03-01-preview'
     openaiDeployment: openaiDeploymentName
-    aiFoundryProjectPrincipalId: aiAccount::project.identity.principalId
-    aiFoundryProjectTenantId: aiAccount::project.identity.tenantId
+    aiFoundryProjectAppId: aiFoundryProjectAppId
+    aiFoundryProjectPrincipalId: !empty(aiFoundryProjectPrincipalId) ? aiFoundryProjectPrincipalId : aiAccount::project.identity.principalId
+    aiFoundryProjectTenantId: !empty(aiFoundryProjectTenantId) ? aiFoundryProjectTenantId : aiAccount::project.identity.tenantId
   }
   dependsOn: [
     coboAgentOpenAIRole // Ensure Azure AI User role is assigned before deploying container app
@@ -140,5 +150,6 @@ output containerAppsEnvironmentName string = enableCoboAgent ? containerAppsEnvi
 output coboAgentName string = enableCoboAgent ? coboAgent!.outputs.COBO_AGENT_NAME : ''
 output coboAgentUri string = enableCoboAgent ? coboAgent!.outputs.COBO_AGENT_URI : ''
 output coboAgentIdentityPrincipalId string = enableCoboAgent ? coboAgentIdentity!.properties.principalId : ''
+output coboAgentResourceId string = enableCoboAgent ? coboAgent!.outputs.COBO_AGENT_RESOURCE_ID : ''
 output resourcetoken string = resourceToken
 output enableHostedAgents bool = enableHostedAgents
