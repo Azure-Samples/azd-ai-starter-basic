@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=ai.yaml.json
+# yaml-language-server: $schema=../schemas/alpha/ai.yaml.json
 
 # azure resources to create and connect to the ai project
 resources:
@@ -20,7 +20,6 @@ connections:
     category: ApiKey
     authType: None
     target: https://learn.microsoft.com/api/mcp
-    key: "${{ LEARN_MCP_API_KEY }}"
 
 # ai model deployments
 deployments:
