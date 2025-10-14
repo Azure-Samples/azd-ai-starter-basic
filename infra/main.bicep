@@ -54,11 +54,11 @@ var hasBingConnection = length(filter(dependent_resources, conn => conn.resource
 var hasBingCustomConnection = length(filter(dependent_resources, conn => conn.resource == 'BingCustomSearch')) > 0
 
 // Extract connection names from ai.yaml for each resource type
-var storageConnectionName = hasStorageConnection ? filter(dependent_resources, conn => conn.resource == 'AzureStorage')[0].connection : ''
-var acrConnectionName = hasAcrConnection ? filter(dependent_resources, conn => conn.resource == 'AzureContainerRegistry')[0].connection : ''
-var searchConnectionName = hasSearchConnection ? filter(dependent_resources, conn => conn.resource == 'AzureAISearch')[0].connection : ''
-var bingConnectionName = hasBingConnection ? filter(dependent_resources, conn => conn.resource == 'BingSearch')[0].connection : ''
-var bingCustomConnectionName = hasBingCustomConnection ? filter(dependent_resources, conn => conn.resource == 'BingCustomSearch')[0].connection : ''
+var storageConnectionName = hasStorageConnection ? filter(dependent_resources, conn => conn.resource == 'AzureStorage')[0].connection_name : ''
+var acrConnectionName = hasAcrConnection ? filter(dependent_resources, conn => conn.resource == 'AzureContainerRegistry')[0].connection_name : ''
+var searchConnectionName = hasSearchConnection ? filter(dependent_resources, conn => conn.resource == 'AzureAISearch')[0].connection_name : ''
+var bingConnectionName = hasBingConnection ? filter(dependent_resources, conn => conn.resource == 'BingSearch')[0].connection_name : ''
+var bingCustomConnectionName = hasBingCustomConnection ? filter(dependent_resources, conn => conn.resource == 'BingCustomSearch')[0].connection_name : ''
 
 // Tags that should be applied to all resources.
 // 
