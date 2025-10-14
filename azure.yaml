@@ -3,7 +3,7 @@ name: ai-foundry-starter-basic
 
 infra:
   provider: bicep
-  path: ./infra/ai/
+  path: ./infra
 
 requiredVersions:
   extensions:
