@@ -4,12 +4,13 @@
 resources:
   - connection_name: acr-connection
     resource: AzureContainerRegistry
-  # - connection_name: storage-connection
-  #   resource: AzureStorage
-  # - connection_name: search-connection
-  #   resource: AzureAISearch
-  # - connection_name: bing-connection
-  #   resource: BingSearch
+  - connection_name: storage-connection
+    resource: AzureStorage
+  - connection_name: search-connection
+    resource: AzureAISearch
+  - connection_name: bing-connection
+    resource: BingSearch
+  # TODO: figure out the "kind"
   # - connection_name: bing-custom-connection
   #   resource: BingCustomSearch
 
