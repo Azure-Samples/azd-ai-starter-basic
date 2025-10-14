@@ -10,13 +10,7 @@ param aiAccountPrincipalId string
 @description('AI Services account name for role assignment naming')
 param aiAccountName string
 
-@description('AI Services account name for the project parent')
-param aiServicesAccountName string
-
-@description('AI project name for creating the connection')
-param aiProjectName string
-
-@description('Name for the AI Foundry Bing custom search connection')
+@description('Name for the AI Foundry Bing Custom Search connection')
 param connectionName string = 'bing-custom-grounding-connection'
 
 // Bing Search resource for grounding capability
@@ -44,35 +38,32 @@ resource bingCustomSearchRoleAssignment 'Microsoft.Authorization/roleAssignments
   }
 }
 
-// Get reference to the AI Services account and project
-resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
-  name: aiServicesAccountName
+@description('AI Services account name for the project parent')
+param aiServicesAccountName string
 
-  resource project 'projects' existing = {
-    name: aiProjectName
-  }
-}
+@description('AI project name for creating the connection')
+param aiProjectName string
 
-
-// Connection from AI project to Bing Custom Search
-// see https://github.com/azure-ai-foundry/foundry-samples/blob/main/samples/microsoft/infrastructure-setup/01-connections/connection-bing-grounding.bicep
-resource bingCustomSearchConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
-  parent: aiAccount::project
-  name: connectionName
-  properties: {
-    category: 'GroundingWithCustomSearch'
-    target: bingCustomSearch.properties.endpoint
-    authType: 'ApiKey'
-    isSharedToAll: true
-    credentials: {
-      key: bingCustomSearch.listKeys().key1
+// Create the Bing Custom Search connection using the centralized connection module
+module bingCustomSearchConnection '../foundry/connection.bicep' = {
+  name: 'bing-custom-search-connection-creation'
+  params: {
+    aiServicesAccountName: aiServicesAccountName
+    aiProjectName: aiProjectName
+    connectionConfig: {
+      name: connectionName
+      category: 'GroundingWithCustomSearch'
+      target: bingCustomSearch.properties.endpoint
+      authType: 'ApiKey'
+      isSharedToAll: true
+      metadata: {
+        Location: 'global'
+        ResourceId: bingCustomSearch.id
+        ApiType: 'Azure'
+        type: 'bing_custom_search'
+      }
     }
-    metadata: {
-      Location: 'global'
-      ResourceId: bingCustomSearch.id
-      ApiType: 'Azure'
-      type: 'bing_custom_search'
-    }
+    apiKey: bingCustomSearch.listKeys().key1
   }
   dependsOn: [
     bingCustomSearchRoleAssignment
@@ -80,6 +71,6 @@ resource bingCustomSearchConnection 'Microsoft.CognitiveServices/accounts/projec
 }
 
 output bingCustomSearchName string = bingCustomSearch.name
-output bingCustomSearchConnectionName string = bingCustomSearchConnection.name
+output bingCustomSearchConnectionName string = bingCustomSearchConnection.outputs.connectionName
 output bingCustomSearchResourceId string = bingCustomSearch.id
-output bingCustomSearchConnectionId string = bingCustomSearchConnection.id
+output bingCustomSearchConnectionId string = bingCustomSearchConnection.outputs.connectionId

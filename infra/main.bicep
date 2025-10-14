@@ -175,6 +175,9 @@ module azureAiSearch './resources/azure_ai_search.bicep' = if (hasSearchConnecti
   }
 }
 
+// All connections are now created directly within their respective resource modules
+// using the centralized foundry/connection.bicep module
+
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4o-mini'

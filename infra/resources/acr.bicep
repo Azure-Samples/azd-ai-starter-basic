@@ -13,9 +13,6 @@ param principalType string
 @description('AI Services account name to get managed identity')
 param aiServicesAccountName string
 
-@description('AI project name for creating the connection')
-param aiProjectName string
-
 @description('Resource name for the container registry')
 param resourceName string
 
@@ -25,10 +22,6 @@ param connectionName string = 'acr-connection'
 // Get reference to the AI Services account to access its managed identity
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
   name: aiServicesAccountName
-
-  resource project 'projects' existing = {
-    name: aiProjectName
-  }
 }
 
 module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' = {
@@ -54,24 +47,33 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
   }
 }
 
-resource acrConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
-  parent: aiAccount::project
-  name: connectionName
-  properties: {
-    category: 'ContainerRegistry'
-    target: containerRegistry.outputs.loginServer
-    authType: 'ManagedIdentity'
-    credentials: {
-      clientId: aiAccount.identity.principalId
-      resourceId: containerRegistry.outputs.resourceId
-    }
-    isSharedToAll: true
-    metadata: {
-      ResourceId: containerRegistry.outputs.resourceId
+@description('AI project name for creating the connection')
+param aiProjectName string
+
+// Create the ACR connection using the centralized connection module
+module acrConnection '../foundry/connection.bicep' = {
+  name: 'acr-connection-creation'
+  params: {
+    aiServicesAccountName: aiServicesAccountName
+    aiProjectName: aiProjectName
+    connectionConfig: {
+      name: connectionName
+      category: 'ContainerRegistry'
+      target: containerRegistry.outputs.loginServer
+      authType: 'ManagedIdentity'
+      credentials: {
+        clientId: aiAccount.identity.principalId
+        resourceId: containerRegistry.outputs.resourceId
+      }
+      isSharedToAll: true
+      metadata: {
+        ResourceId: containerRegistry.outputs.resourceId
+      }
     }
   }
 }
 
 output containerRegistryName string = containerRegistry.outputs.name
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
-output containerRegistryConnectionName string = acrConnection.name
+output containerRegistryResourceId string = containerRegistry.outputs.resourceId
+output containerRegistryConnectionName string = acrConnection.outputs.connectionName

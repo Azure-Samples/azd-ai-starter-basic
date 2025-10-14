@@ -10,9 +10,6 @@ param storageAccountName string
 @description('AI Services account name to get managed identity')
 param aiServicesAccountName string
 
-@description('AI project name for creating the connection')
-param aiProjectName string
-
 @description('Id of the user or app to assign application roles')
 param principalId string
 
@@ -53,30 +50,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 }
 
-// Get reference to the AI Services account and project to create connection
+// Get reference to the AI Services account for role assignments
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
   name: aiServicesAccountName
-
-  resource project 'projects' existing = {
-    name: aiProjectName
-  }
-}
-
-// Create storage connection to the AI Foundry project
-resource storageConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
-  parent: aiAccount::project
-  name: connectionName
-  properties: {
-    category: 'AzureStorageAccount'
-    target: storageAccount.properties.primaryEndpoints.blob
-    authType: 'AAD'
-    isSharedToAll: true
-    metadata: {
-      ApiType: 'Azure'
-      ResourceId: storageAccount.id
-      location: storageAccount.location
-    }
-  }
 }
 
 // Role assignment for AI Services to access the storage account
@@ -101,19 +77,32 @@ resource userStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022
   }
 }
 
-// Project permissions - Storage Blob Data Owner (for full access to storage from project)
-resource projectStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, aiAccount::project.id, 'project-storage-owner')
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b') // Storage Blob Data Owner
-    principalId: aiAccount::project.identity.principalId
-    principalType: 'ServicePrincipal'
+// Outputs
+@description('AI project name for creating the connection')
+param aiProjectName string
+
+// Create the storage connection using the centralized connection module
+module storageConnection '../foundry/connection.bicep' = {
+  name: 'storage-connection-creation'
+  params: {
+    aiServicesAccountName: aiServicesAccountName
+    aiProjectName: aiProjectName
+    connectionConfig: {
+      name: connectionName
+      category: 'AzureStorageAccount'
+      target: storageAccount.properties.primaryEndpoints.blob
+      authType: 'AAD'
+      isSharedToAll: true
+      metadata: {
+        ApiType: 'Azure'
+        ResourceId: storageAccount.id
+        location: storageAccount.location
+      }
+    }
   }
 }
 
-// Outputs
 output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
-output storageConnectionName string = storageConnection.name
 output storageAccountPrincipalId string = storageAccount.identity.principalId
+output storageConnectionName string = storageConnection.outputs.connectionName

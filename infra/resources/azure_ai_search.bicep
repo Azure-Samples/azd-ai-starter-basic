@@ -169,20 +169,24 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
   }
 }
 
-// AI Search Connection
-resource aiSearchConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
-  parent: aiAccount::project
-  name: connectionName
-  properties: {
-    category: 'CognitiveSearch'
-    target: 'https://${searchService.name}.search.windows.net'
-    authType: 'AAD'
-    isSharedToAll: true
-    metadata: {
-      ApiVersion: '2024-07-01'
-      ResourceId: searchService.id
-      ApiType: 'Azure'
-      type: 'azure_ai_search'
+// Create the AI Search connection using the centralized connection module
+module aiSearchConnection '../foundry/connection.bicep' = {
+  name: 'ai-search-connection-creation'
+  params: {
+    aiServicesAccountName: aiServicesAccountName
+    aiProjectName: aiProjectName
+    connectionConfig: {
+      name: connectionName
+      category: 'CognitiveSearch'
+      target: 'https://${searchService.name}.search.windows.net'
+      authType: 'AAD'
+      isSharedToAll: true
+      metadata: {
+        ApiVersion: '2024-07-01'
+        ResourceId: searchService.id
+        ApiType: 'Azure'
+        type: 'azure_ai_search'
+      }
     }
   }
   dependsOn: [
@@ -194,9 +198,9 @@ resource aiSearchConnection 'Microsoft.CognitiveServices/accounts/projects/conne
 output searchServiceName string = searchService.name
 output searchServiceId string = searchService.id
 output searchServicePrincipalId string = searchService.identity.principalId
-output searchConnectionName string = aiSearchConnection.name
-output searchConnectionId string = aiSearchConnection.id
 output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output containerName string = storageContainer.name
 output storageAccountPrincipalId string = storageAccount.identity.principalId
+output searchConnectionName string = aiSearchConnection.outputs.connectionName
+output searchConnectionId string = aiSearchConnection.outputs.connectionId
