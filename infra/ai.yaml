@@ -19,6 +19,7 @@ connections:
     category: ApiKey
     authType: None
     target: https://learn.microsoft.com/api/mcp
+    key: "${{ LEARN_MCP_API_KEY }}"
 
 # ai model deployments
 deployments:

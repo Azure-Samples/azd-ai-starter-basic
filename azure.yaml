@@ -2,10 +2,10 @@
 name: ai-foundry-starter-basic
 
 infra:
-    provider: bicep
-    path: ./infra
-    module: main
+  provider: bicep
+  path: ./infra/ai/
 
-# requiredVersions:
-#   extensions: # Template can define extension requirements.
-#     "azure.foundry.ai.agents": "^1.0.0"
+requiredVersions:
+  extensions:
+    # the azd ai agent extension is required for this template
+    "azure.foundry.ai.agents": "0.0.1"

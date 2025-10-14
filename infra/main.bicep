@@ -38,7 +38,7 @@ param enableBingGrounding bool = false
 param enableCustomBingGrounding bool = false
 
 // Load AI configuration from YAML file
-var aiConfig = loadYamlContent('../ai.yaml')
+var aiConfig = loadYamlContent('./ai.yaml')
 
 // Get deployments from the YAML configuration
 var deployments = aiConfig.deployments
