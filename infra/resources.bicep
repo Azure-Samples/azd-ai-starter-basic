@@ -120,12 +120,13 @@ module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = i
 }
 
 // COBO Agent
-var prefix = resourceToken
+// Container App names must start with a letter, so prefix the resource token
+var prefix = 'ca-${resourceToken}'
 module coboAgent 'cobo-agent.bicep' = if (enableCoboAgent) {
   name: 'cobo-agent'
   scope: resourceGroup()
   params: {
-    name: replace('${take(prefix,19)}-ca', '--', '-')
+    name: replace('${take(prefix,32)}', '--', '-')
     location: location
     tags: tags
     identityName: coboAgentIdentity!.name
