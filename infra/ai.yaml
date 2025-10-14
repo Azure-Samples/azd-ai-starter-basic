@@ -2,15 +2,15 @@
 
 # azure resources to create and connect to the ai project
 resources:
-  - connection: acr-connection
+  - connection_name: acr-connection
     resource: AzureContainerRegistry
-  # - connection: storage-connection
+  # - connection_name: storage-connection
   #   resource: AzureStorage
-  # - connection: search-connection
+  # - connection_name: search-connection
   #   resource: AzureAISearch
-  # - connection: bing-connection
+  # - connection_name: bing-connection
   #   resource: BingSearch
-  # - connection: bing-custom-connection
+  # - connection_name: bing-custom-connection
   #   resource: BingCustomSearch
 
 # connections to create in the ai project

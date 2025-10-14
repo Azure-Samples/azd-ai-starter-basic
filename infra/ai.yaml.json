@@ -221,7 +221,7 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "connection": {
+                    "connection_name": {
                         "type": "string",
                         "title": "The connection name",
                         "description": "Name of the connection that will reference this resource"
@@ -240,7 +240,7 @@
                     }
                 },
                 "required": [
-                    "connection",
+                    "connection_name",
                     "resource"
                 ]
             }
