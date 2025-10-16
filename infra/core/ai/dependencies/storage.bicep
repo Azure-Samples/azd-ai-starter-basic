@@ -1,3 +1,5 @@
+targetScope = 'resourceGroup'
+
 @description('The location used for all deployed resources')
 param location string = resourceGroup().location
 
@@ -82,7 +84,7 @@ resource userStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022
 param aiProjectName string
 
 // Create the storage connection using the centralized connection module
-module storageConnection '../foundry/connection.bicep' = {
+module storageConnection '../connection.bicep' = {
   name: 'storage-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName

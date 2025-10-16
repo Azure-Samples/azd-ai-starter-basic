@@ -1,3 +1,5 @@
+targetScope = 'resourceGroup'
+
 @description('AI Services account name')
 param aiServicesAccountName string
 

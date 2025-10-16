@@ -1,3 +1,5 @@
+targetScope = 'resourceGroup'
+
 @description('The location used for all deployed resources')
 param location string = resourceGroup().location
 
@@ -51,7 +53,7 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
 param aiProjectName string
 
 // Create the ACR connection using the centralized connection module
-module acrConnection '../foundry/connection.bicep' = {
+module acrConnection '../connection.bicep' = {
   name: 'acr-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName

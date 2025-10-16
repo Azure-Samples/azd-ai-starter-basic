@@ -1,3 +1,5 @@
+targetScope = 'resourceGroup'
+
 @description('Tags that will be applied to all resources')
 param tags object = {}
 
@@ -45,7 +47,7 @@ param aiServicesAccountName string
 param aiProjectName string
 
 // Create the Bing Custom Search connection using the centralized connection module
-module bingCustomSearchConnection '../foundry/connection.bicep' = {
+module bingCustomSearchConnection '../connection.bicep' = {
   name: 'bing-custom-search-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName

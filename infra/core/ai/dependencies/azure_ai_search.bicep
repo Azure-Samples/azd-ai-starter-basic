@@ -1,3 +1,5 @@
+targetScope = 'resourceGroup'
+
 @description('Tags that will be applied to all resources')
 param tags object = {}
 
@@ -175,7 +177,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' exi
 }
 
 // Create the AI Search connection using the centralized connection module
-module aiSearchConnection '../foundry/connection.bicep' = {
+module aiSearchConnection '../connection.bicep' = {
   name: 'ai-search-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName
