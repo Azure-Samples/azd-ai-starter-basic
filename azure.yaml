@@ -6,5 +6,6 @@ infra:
   path: ./infra
 
 requiredVersions:
-  extensions: # Template can define extension requirements.
-    "azure.foundry.ai.agents": "0.0.1-preview"
+  extensions:
+    # the azd ai agent extension is required for this template
+    "azure.foundry.ai.agents": ">=0.0.1"

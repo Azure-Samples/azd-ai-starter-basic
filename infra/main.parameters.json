@@ -23,11 +23,14 @@
       "principalType": {
         "value": "${AZURE_PRINCIPAL_TYPE}"
       },
-      "enableHostedAgents": {
-        "value": "${ENABLE_HOSTED_AGENTS}"
+      "aiProjectDeployments": {
+        "value": []
       },
-      "enableBingGrounding": {
-        "value": "${ENABLE_BING_GROUNDING}"
+      "aiProjectConnections": {
+        "value": []
+      },
+      "aiProjectDependentResources": {
+        "value": []
       }
     }
 }
