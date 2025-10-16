@@ -28,12 +28,6 @@ param connections array = []
 @description('Also provision dependent resources and connect to the project')
 param additionalDependentResources  array = []
 
-@description('Enable Bing Search grounding capability')
-param enableBingGrounding bool = false
-
-@description('Enable Custom Bing Search grounding capability')
-param enableCustomBingGrounding bool = false
-
 // Load abbreviations
 var abbrs = loadJsonContent('../../abbreviations.json')
 
@@ -174,7 +168,7 @@ module acr './dependencies/acr.bicep' = if (hasAcrConnection) {
 }
 
 // Bing Search grounding module - deploy if Bing connection is defined in ai.yaml or parameter is enabled
-module bingGrounding './dependencies/bing_grounding.bicep' = if (hasBingConnection || enableBingGrounding) {
+module bingGrounding './dependencies/bing_grounding.bicep' = if (hasBingConnection) {
   name: 'bing-grounding'
   params: {
     tags: tags
@@ -188,7 +182,7 @@ module bingGrounding './dependencies/bing_grounding.bicep' = if (hasBingConnecti
 }
 
 // Bing Custom Search grounding module - deploy if custom Bing connection is defined in ai.yaml or parameter is enabled
-module bingCustomGrounding './dependencies/bing_custom_grounding.bicep' = if (hasBingCustomConnection || enableCustomBingGrounding) {
+module bingCustomGrounding './dependencies/bing_custom_grounding.bicep' = if (hasBingCustomConnection) {
   name: 'bing-custom-grounding'
   params: {
     tags: tags
@@ -234,13 +228,13 @@ output dependentResources object = {
     connectionName: hasAcrConnection ? acr!.outputs.containerRegistryConnectionName : ''
   }
   bingSearch: {
-    name: (hasBingConnection || enableBingGrounding) ? bingGrounding!.outputs.bingSearchName : ''
-    connectionName: (hasBingConnection || enableBingGrounding) ? bingGrounding!.outputs.bingSearchConnectionName : ''
-    connectionId: (hasBingConnection || enableBingGrounding) ? bingGrounding!.outputs.bingSearchConnectionId : ''
+    name: (hasBingConnection) ? bingGrounding!.outputs.bingSearchName : ''
+    connectionName: (hasBingConnection) ? bingGrounding!.outputs.bingSearchConnectionName : ''
+    connectionId: (hasBingConnection) ? bingGrounding!.outputs.bingSearchConnectionId : ''
   }
   bingCustomSearch: {
-    name: (hasBingCustomConnection || enableCustomBingGrounding) ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
-    connectionName: (hasBingCustomConnection || enableCustomBingGrounding) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
+    name: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
+    connectionName: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
   }
   search: {
     serviceName: hasSearchConnection ? azureAiSearch!.outputs.searchServiceName : ''

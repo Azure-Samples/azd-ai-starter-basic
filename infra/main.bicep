@@ -32,20 +32,14 @@ param principalType string
 @description('Optional. Name of an existing AI Services account within the resource group. If not provided, a new one will be created.')
 param aiFoundryResourceName string = ''
 
-@description('Enable Bing Search grounding capability')
-param enableBingGrounding bool = false
-
-@description('Enable Custom Bing Search grounding capability')
-param enableCustomBingGrounding bool = false
-
 @description('List of model deployments')
-param deployments array = []
+param aiProjectDeployments array = []
 
 @description('List of connections')
-param connections array = []
+param aiProjectConnections array = []
 
 @description('List of resources to create and connect to the AI project')
-param resources array = []
+param aiProjectDependentResources array = []
 
 // Tags that should be applied to all resources.
 // 
@@ -74,11 +68,9 @@ module aiProject 'core/ai/ai-project.bicep' = {
     principalId: principalId
     principalType: principalType
     existingAiAccountName: aiFoundryResourceName
-    deployments: deployments
-    connections: connections
-    additionalDependentResources: resources
-    enableBingGrounding: enableBingGrounding
-    enableCustomBingGrounding: enableCustomBingGrounding
+    deployments: aiProjectDeployments
+    connections: aiProjectConnections
+    additionalDependentResources: aiProjectDependentResources
   }
 }
 

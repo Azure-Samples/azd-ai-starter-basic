@@ -23,22 +23,13 @@
       "principalType": {
         "value": "${AZURE_PRINCIPAL_TYPE}"
       },
-      "dependentResources": {
-        "value": [
-          {
-            "connection_name": "acr-connection",
-            "resource": "AzureContainerRegistry"
-          },
-          {
-            "connection_name": "storage-connection",
-            "resource": "AzureStorage"
-          }
-        ]
-      },
-      "connections": {
+      "aiProjectDeployments": {
         "value": []
       },
-      "deployments": {
+      "aiProjectConnections": {
+        "value": []
+      },
+      "aiProjectDependentResources": {
         "value": []
       }
     }
