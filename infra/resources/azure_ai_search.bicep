@@ -86,9 +86,10 @@ resource storageContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
 
 // Search needs to read from Storage
 resource searchToStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, searchService.id, 'Storage Blob Data Reader')
+  name: guid(storageAccount.id, searchService.id, 'Storage Blob Data Reader', uniqueString(deployment().name))
   scope: storageAccount
   properties: {
+    // GOOD
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1') // Storage Blob Data Reader
     principalId: searchService.identity.principalId
     principalType: 'ServicePrincipal'
@@ -97,8 +98,9 @@ resource searchToStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@
 
 // Search needs OpenAI access (AI Services account)
 resource searchToAIServicesRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(aiServicesAccountName, searchService.id, 'Cognitive Services OpenAI User')
+  name: guid(aiServicesAccountName, searchService.id, 'Cognitive Services OpenAI User', uniqueString(deployment().name))
   properties: {
+    // GOOD
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd') // Cognitive Services OpenAI User
     principalId: searchService.identity.principalId
     principalType: 'ServicePrincipal'
@@ -107,9 +109,10 @@ resource searchToAIServicesRoleAssignment 'Microsoft.Authorization/roleAssignmen
 
 // AI Services needs Search access - Service Contributor
 resource aiServicesToSearchServiceRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, aiAccountPrincipalId, 'Search Service Contributor')
+  name: guid(searchService.id, aiAccountPrincipalId, 'Search Service Contributor', uniqueString(deployment().name))
   scope: searchService
   properties: {
+    // GOOD
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0') // Search Service Contributor
     principalId: aiAccountPrincipalId
     principalType: 'ServicePrincipal'
@@ -118,9 +121,10 @@ resource aiServicesToSearchServiceRoleAssignment 'Microsoft.Authorization/roleAs
 
 // AI Services needs Search access - Index Data Contributor
 resource aiServicesToSearchDataRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, aiAccountPrincipalId, 'Search Index Data Contributor')
+  name: guid(searchService.id, aiAccountPrincipalId, 'Search Index Data Contributor', uniqueString(deployment().name))
   scope: searchService
   properties: {
+    // GOOD
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7') // Search Index Data Contributor
     principalId: aiAccountPrincipalId
     principalType: 'ServicePrincipal'
@@ -129,36 +133,37 @@ resource aiServicesToSearchDataRoleAssignment 'Microsoft.Authorization/roleAssig
 
 // User permissions - Search Index Data Contributor
 resource userToSearchRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, principalId, 'Search Index Data Contributor')
+  name: guid(searchService.id, principalId, 'Search Index Data Contributor', uniqueString(deployment().name))
   scope: searchService
   properties: {
+    // GOOD
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7') // Search Index Data Contributor
     principalId: principalId
     principalType: principalType
   }
 }
 
-// User permissions - Storage Blob Data Contributor
-resource userToStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, principalId, 'Storage Blob Data Contributor')
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
-    principalId: principalId
-    principalType: principalType
-  }
-}
+// // User permissions - Storage Blob Data Contributor
+// resource userToStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   name: guid(storageAccount.id, principalId, 'Storage Blob Data Contributor', uniqueString(deployment().name))
+//   scope: storageAccount
+//   properties: {
+//     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
+//     principalId: principalId
+//     principalType: principalType
+//   }
+// }
 
-// Project needs Search access - Index Data Contributor
-resource projectToSearchRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, aiProjectName, 'Search Index Data Contributor')
-  scope: searchService
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7') // Search Index Data Contributor
-    principalId: aiAccountPrincipalId // Using AI account principal ID as project identity
-    principalType: 'ServicePrincipal'
-  }
-}
+// // Project needs Search access - Index Data Contributor
+// resource projectToSearchRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   name: guid(searchService.id, aiProjectName, 'Search Index Data Contributor', uniqueString(deployment().name))
+//   scope: searchService
+//   properties: {
+//     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7') // Search Index Data Contributor
+//     principalId: aiAccountPrincipalId // Using AI account principal ID as project identity
+//     principalType: 'ServicePrincipal'
+//   }
+// }
 
 // Get reference to the AI Services account and project
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
@@ -190,7 +195,7 @@ module aiSearchConnection '../foundry/connection.bicep' = {
     }
   }
   dependsOn: [
-    projectToSearchRoleAssignment
+    aiServicesToSearchDataRoleAssignment
   ]
 }
 

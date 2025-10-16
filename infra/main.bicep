@@ -37,28 +37,28 @@ param enableBingGrounding bool = false
 @description('Enable Custom Bing Search grounding capability')
 param enableCustomBingGrounding bool = false
 
-// Load AI configuration from YAML file
-var aiConfig = loadYamlContent('./ai.yaml')
+@description('List of model deployments')
+param deployments array = []
 
-// Get deployments from the YAML configuration
-var deployments = aiConfig.deployments
+@description('List of connections')
+param connections array = []
 
-// Get list of dependencies from the YAML configuration
-var dependent_resources = aiConfig.resources
+@description('AI Foundry configuration for dependent resources')
+param dependentResources array = []
 
 // Determine which resources to create based on connections
-var hasStorageConnection = length(filter(dependent_resources, conn => conn.resource == 'AzureStorage')) > 0
-var hasAcrConnection = length(filter(dependent_resources, conn => conn.resource == 'AzureContainerRegistry')) > 0
-var hasSearchConnection = length(filter(dependent_resources, conn => conn.resource == 'AzureAISearch')) > 0
-var hasBingConnection = length(filter(dependent_resources, conn => conn.resource == 'BingSearch')) > 0
-var hasBingCustomConnection = length(filter(dependent_resources, conn => conn.resource == 'BingCustomSearch')) > 0
+var hasStorageConnection = length(filter(dependentResources, conn => conn.resource == 'AzureStorage')) > 0
+var hasAcrConnection = length(filter(dependentResources, conn => conn.resource == 'AzureContainerRegistry')) > 0
+var hasSearchConnection = length(filter(dependentResources, conn => conn.resource == 'AzureAISearch')) > 0
+var hasBingConnection = length(filter(dependentResources, conn => conn.resource == 'BingSearch')) > 0
+var hasBingCustomConnection = length(filter(dependentResources, conn => conn.resource == 'BingCustomSearch')) > 0
 
 // Extract connection names from ai.yaml for each resource type
-var storageConnectionName = hasStorageConnection ? filter(dependent_resources, conn => conn.resource == 'AzureStorage')[0].connection_name : ''
-var acrConnectionName = hasAcrConnection ? filter(dependent_resources, conn => conn.resource == 'AzureContainerRegistry')[0].connection_name : ''
-var searchConnectionName = hasSearchConnection ? filter(dependent_resources, conn => conn.resource == 'AzureAISearch')[0].connection_name : ''
-var bingConnectionName = hasBingConnection ? filter(dependent_resources, conn => conn.resource == 'BingSearch')[0].connection_name : ''
-var bingCustomConnectionName = hasBingCustomConnection ? filter(dependent_resources, conn => conn.resource == 'BingCustomSearch')[0].connection_name : ''
+var storageConnectionName = hasStorageConnection ? filter(dependentResources, conn => conn.resource == 'AzureStorage')[0].connection_name : ''
+var acrConnectionName = hasAcrConnection ? filter(dependentResources, conn => conn.resource == 'AzureContainerRegistry')[0].connection_name : ''
+var searchConnectionName = hasSearchConnection ? filter(dependentResources, conn => conn.resource == 'AzureAISearch')[0].connection_name : ''
+var bingConnectionName = hasBingConnection ? filter(dependentResources, conn => conn.resource == 'BingSearch')[0].connection_name : ''
+var bingCustomConnectionName = hasBingCustomConnection ? filter(dependentResources, conn => conn.resource == 'BingCustomSearch')[0].connection_name : ''
 
 // Tags that should be applied to all resources.
 // 
@@ -93,6 +93,23 @@ module aiProject 'ai-project.bicep' = {
     deployments: deployments
   }
 }
+
+// Create connections from ai.yaml configuration
+module aiConnections 'foundry/connection.bicep' = [for (connection, index) in connections: {
+  scope: rg
+  name: 'connection-${connection.name}'
+  params: {
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: aiProject.outputs.aiServicesProjectName
+    connectionConfig: {
+      name: connection.name
+      category: connection.category
+      target: connection.target
+      authType: connection.authType
+    }
+    apiKey: '' // API keys should be provided via secure parameters or Key Vault
+  }
+}]
 
 // Storage module - deploy if storage connection is defined in ai.yaml
 module storage './resources/storage.bicep' = if (hasStorageConnection) {

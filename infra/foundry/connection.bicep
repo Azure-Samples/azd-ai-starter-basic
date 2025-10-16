@@ -35,6 +35,7 @@ param connectionConfig ConnectionConfig
 @description('API key for ApiKey based connections (optional)')
 param apiKey string = ''
 
+
 // Get reference to the AI Services account and project
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
   name: aiServicesAccountName
