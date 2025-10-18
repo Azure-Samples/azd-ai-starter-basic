@@ -31,6 +31,12 @@
       },
       "aiProjectDependentResourcesJson": {
         "value": "${AI_PROJECT_DEPENDENT_RESOURCES:=[]}"
+      },
+      "enableCoboAgent": {
+        "value": "${ENABLE_COBO_AGENT=true}"
+      },
+      "agentName": {
+        "value": "${AGENT_NAME=calculator-agent}"
       }
     }
 }

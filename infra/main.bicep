@@ -45,6 +45,12 @@ var aiProjectDeployments array = json(aiProjectDeploymentsJson)
 var aiProjectConnections array = json(aiProjectConnectionsJson)
 var aiProjectDependentResources array = json(aiProjectDependentResourcesJson)
 
+@description('Enable COBO agent deployment')
+param enableCoboAgent bool = true
+
+@description('Name to identify the COBO agent in AI Foundry')
+param agentName string = 'calculator-agent'
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -78,11 +84,41 @@ module aiProject 'core/ai/ai-project.bicep' = {
   }
 }
 
+var resourceToken = toLower(uniqueString(subscription().id, rg.id, location))
+var prefix = 'ca-${environmentName}-${resourceToken}'
+
+// Container Apps Environment for COBO agent
+module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = if (enableCoboAgent) {
+  scope: rg
+  name: 'container-apps-environment'
+  params: {
+    name: '${prefix}-env'
+    location: location
+    tags: tags
+  }
+}
+
+// COBO Agent module
+module coboAgent 'cobo-agent.bicep' = if (enableCoboAgent) {
+  scope: rg
+  name: 'cobo-agent'
+  params: {
+    name: replace(take(prefix, 32), '--', '-')
+    location: location
+    tags: tags
+    identityName: '${prefix}-id'
+    containerAppsEnvironmentName: containerAppsEnvironment!.outputs.name
+    containerRegistryName: aiProject.outputs.dependentResources.containerRegistry.name
+    openaiEndpoint: aiProject.outputs.aiServicesEndpoint
+    openaiApiVersion: '2025-03-01-preview'
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: environmentName
+  }
+}
 
 
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
-output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4o-mini'
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.containerRegistry.loginServer
 output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.containerRegistry.connectionName
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
@@ -98,3 +134,17 @@ output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResourc
 
 // naming convention required in Agent Framework
 output BING_CONNECTION_ID string = aiProject.outputs.dependentResources.bingSearch.connectionId
+
+// COBO Agent outputs
+output AZURE_CONTAINER_ENVIRONMENT_NAME string = enableCoboAgent ? containerAppsEnvironment!.outputs.name : ''
+output AZURE_CONTAINER_REGISTRY_NAME string = aiProject.outputs.dependentResources.containerRegistry.name
+output SERVICE_API_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_IDENTITY_PRINCIPAL_ID : ''
+output SERVICE_API_NAME string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_NAME : ''
+output SERVICE_API_URI string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_URI : ''
+output SERVICE_API_IMAGE_NAME string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_IMAGE_NAME : ''
+output SERVICE_API_RESOURCE_ID string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_RESOURCE_ID : ''
+output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_PRINCIPAL_ID : ''
+output AI_FOUNDRY_PROJECT_TENANT_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_TENANT_ID : ''
+output AGENT_NAME string = agentName
+output AI_FOUNDRY_RESOURCE_ID string = '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/${aiProject.outputs.aiServicesAccountName}'
+output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.projectId
