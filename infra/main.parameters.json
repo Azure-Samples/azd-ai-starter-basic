@@ -30,7 +30,18 @@
         "value": []
       },
       "aiProjectDependentResources": {
-        "value": []
+        "value": [
+          {
+            "resource": "AzureContainerRegistry",
+            "connection_name": "acr-connection"
+          }
+        ]
+      },
+      "enableCoboAgent": {
+        "value": "${ENABLE_COBO_AGENT=true}"
+      },
+      "agentName": {
+        "value": "${AGENT_NAME=calculator-agent}"
       }
     }
 }
