@@ -147,10 +147,7 @@ Write-Host "`n======================================"
 Write-Host "Container App Authentication Setup Complete"
 Write-Host "======================================"
 
-# Wait for authentication settings to propagate
-Write-Host "`nℹ️  Waiting 60 seconds for authentication settings to propagate..."
-Start-Sleep -Seconds 60
-Write-Host "✓ Wait complete. Proceeding with agent registration."
+Write-Host "Proceeding to Agent Registration with AI Foundry..."
 
 # Extract account name and resource group from resource ID
 # Format: /subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.CognitiveServices/accounts/{account-name}
@@ -248,6 +245,47 @@ if ($resourceId) {
             }
         } catch {
             Write-Warning "Error while deactivating hello-world revision: $($_.Exception.Message)"
+        }
+        
+        # Restart the latest Container App revision to apply authentication changes
+        Write-Host "`n======================================"
+        Write-Host "Restarting Container App"
+        Write-Host "======================================"
+        Write-Host "ℹ️  Restarting the Container App to apply authentication changes..."
+        
+        # Get all revisions (we already have them from the hello-world deactivation)
+        $activeRevisions = $revisions | Where-Object { $_.active -eq $true }
+        
+        if ($activeRevisions) {
+            # If multiple active revisions, get the latest one (last in the list)
+            if ($activeRevisions -is [array]) {
+                $latestRevision = $activeRevisions[-1]
+            } else {
+                $latestRevision = $activeRevisions
+            }
+            
+            $revisionName = $latestRevision.name
+            Write-Host "Latest active revision: $revisionName"
+            
+            # Restart the revision
+            az containerapp revision restart `
+                --name $appName `
+                --resource-group $resourceGroup `
+                --subscription $subscription `
+                --revision $revisionName
+            
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "✓ Container App revision restarted successfully"
+                Write-Host "`nℹ️  Waiting 60 seconds for restart to complete..."
+                Start-Sleep -Seconds 60
+                Write-Host "✓ Wait complete."
+            } else {
+                Write-Error "Failed to restart Container App revision"
+                exit 1
+            }
+        } else {
+            Write-Error "No active revisions found to restart"
+            exit 1
         }
     } else {
         Write-Warning "Could not parse subscription, resource group or app name from resource ID"

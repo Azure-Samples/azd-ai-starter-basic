@@ -140,15 +140,16 @@ echo "✓ Container App authentication configured successfully"
 # Verify authentication configuration
 echo ""
 echo "Verifying authentication configuration..."
-AUTH_CONFIG_RESULT=$(az rest --method GET \
+AUTH_CONFIG_JSON=$(az rest --method GET \
     --uri "https://management.azure.com$RESOURCE_ID/authConfigs/current?api-version=2024-03-01" 2>/dev/null)
 
-if [ -n "$AUTH_CONFIG_RESULT" ]; then
-    PLATFORM_ENABLED=$(echo "$AUTH_CONFIG_RESULT" | parse_json_value - "data['properties']['platform']['enabled']" 2>/dev/null || echo "unknown")
-    UNAUTH_ACTION=$(echo "$AUTH_CONFIG_RESULT" | parse_json_value - "data['properties']['globalValidation']['unauthenticatedClientAction']" 2>/dev/null || echo "unknown")
-    AAD_ENABLED=$(echo "$AUTH_CONFIG_RESULT" | parse_json_value - "data['properties']['identityProviders']['azureActiveDirectory']['enabled']" 2>/dev/null || echo "unknown")
-    CLIENT_ID=$(echo "$AUTH_CONFIG_RESULT" | parse_json_value - "data['properties']['identityProviders']['azureActiveDirectory']['registration']['clientId']" 2>/dev/null || echo "unknown")
-    ISSUER=$(echo "$AUTH_CONFIG_RESULT" | parse_json_value - "data['properties']['identityProviders']['azureActiveDirectory']['registration']['openIdIssuer']" 2>/dev/null || echo "unknown")
+if [ -n "$AUTH_CONFIG_JSON" ]; then
+    # Use python3 to parse JSON properly
+    PLATFORM_ENABLED=$(echo "$AUTH_CONFIG_JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('properties', {}).get('platform', {}).get('enabled', 'unknown'))" 2>/dev/null || echo "unknown")
+    UNAUTH_ACTION=$(echo "$AUTH_CONFIG_JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('properties', {}).get('globalValidation', {}).get('unauthenticatedClientAction', 'unknown'))" 2>/dev/null || echo "unknown")
+    AAD_ENABLED=$(echo "$AUTH_CONFIG_JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('properties', {}).get('identityProviders', {}).get('azureActiveDirectory', {}).get('enabled', 'unknown'))" 2>/dev/null || echo "unknown")
+    CLIENT_ID=$(echo "$AUTH_CONFIG_JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('properties', {}).get('identityProviders', {}).get('azureActiveDirectory', {}).get('registration', {}).get('clientId', 'unknown'))" 2>/dev/null || echo "unknown")
+    ISSUER=$(echo "$AUTH_CONFIG_JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('properties', {}).get('identityProviders', {}).get('azureActiveDirectory', {}).get('registration', {}).get('openIdIssuer', 'unknown'))" 2>/dev/null || echo "unknown")
     
     echo "✓ Authentication Platform Enabled: $PLATFORM_ENABLED"
     echo "✓ Unauthenticated Client Action: $UNAUTH_ACTION"
@@ -163,9 +164,50 @@ echo "======================================"
 echo "Container App Authentication Setup Complete"
 echo "======================================"
 
-# Wait for authentication settings to propagate
+# Restart the latest Container App revision to apply authentication changes
 echo ""
-echo "ℹ️  Waiting 60 seconds for authentication settings to propagate..."
+echo "Restarting Container App to apply authentication changes..."
+
+# Extract subscription, resource group and app name from resource ID
+# Format: /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.App/containerApps/{name}
+SUBSCRIPTION=$(echo "$RESOURCE_ID" | sed -n 's|.*/subscriptions/\([^/]*\)/.*|\1|p')
+RESOURCE_GROUP=$(echo "$RESOURCE_ID" | sed -n 's|.*/resourceGroups/\([^/]*\)/.*|\1|p')
+APP_NAME=$(echo "$RESOURCE_ID" | sed -n 's|.*/containerApps/\([^/]*\)$|\1|p')
+
+if [ -z "$SUBSCRIPTION" ] || [ -z "$RESOURCE_GROUP" ] || [ -z "$APP_NAME" ]; then
+    echo "Warning: Could not parse Container App resource ID for restart" >&2
+else
+    # Get the latest active revision name
+    LATEST_REVISION=$(az containerapp revision list \
+        --name "$APP_NAME" \
+        --resource-group "$RESOURCE_GROUP" \
+        --subscription "$SUBSCRIPTION" \
+        --query "[?properties.active==\`true\`] | [0].name" \
+        -o tsv 2>/dev/null | tr -d '\r\n')
+    
+    if [ -n "$LATEST_REVISION" ]; then
+        echo "Latest active revision: $LATEST_REVISION"
+        
+        # Restart the revision
+        az containerapp revision restart \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --subscription "$SUBSCRIPTION" \
+            --revision "$LATEST_REVISION" >/dev/null 2>&1
+        
+        if [ $? -eq 0 ]; then
+            echo "✓ Container App revision restarted successfully"
+        else
+            echo "Warning: Failed to restart Container App revision, but continuing..." >&2
+        fi
+    else
+        echo "Warning: Could not find active revision to restart" >&2
+    fi
+fi
+
+# Wait for authentication settings to propagate and restart to complete
+echo ""
+echo "ℹ️  Waiting 60 seconds for authentication settings to propagate and restart to complete..."
 sleep 60
 echo "✓ Wait complete. Proceeding with agent registration."
 
