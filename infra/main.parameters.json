@@ -23,14 +23,14 @@
       "principalType": {
         "value": "${AZURE_PRINCIPAL_TYPE}"
       },
-      "aiProjectDeployments": {
-        "value": []
+      "aiProjectDeploymentsJson": {
+        "value": "${AI_PROJECT_DEPLOYMENTS:=[]}"
       },
-      "aiProjectConnections": {
-        "value": []
+      "aiProjectConnectionsJson": {
+        "value": "${AI_PROJECT_CONNECTIONS:=[]}"
       },
-      "aiProjectDependentResources": {
-        "value": []
+      "aiProjectDependentResourcesJson": {
+        "value": "${AI_PROJECT_DEPENDENT_RESOURCES:=[]}"
       }
     }
 }
