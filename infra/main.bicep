@@ -33,13 +33,17 @@ param principalType string
 param aiFoundryResourceName string = ''
 
 @description('List of model deployments')
-param aiProjectDeployments array = []
+param aiProjectDeploymentsJson string = '[]'
 
 @description('List of connections')
-param aiProjectConnections array = []
+param aiProjectConnectionsJson string = '[]'
 
 @description('List of resources to create and connect to the AI project')
-param aiProjectDependentResources array = []
+param aiProjectDependentResourcesJson string = '[]'
+
+var aiProjectDeployments array = json(aiProjectDeploymentsJson)
+var aiProjectConnections array = json(aiProjectConnectionsJson)
+var aiProjectDependentResources array = json(aiProjectDependentResourcesJson)
 
 // Tags that should be applied to all resources.
 // 
