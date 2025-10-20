@@ -24,7 +24,7 @@
         "value": "${AZURE_PRINCIPAL_TYPE}"
       },
       "aiProjectDeployments": {
-        "value": []
+        "value": "${AI_PROJECT_DEPLOYMENTS}"
       },
       "aiProjectConnections": {
         "value": []
