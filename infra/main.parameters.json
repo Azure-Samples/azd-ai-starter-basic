@@ -33,7 +33,7 @@
         "value": "${AI_PROJECT_DEPENDENT_RESOURCES:=[]}"
       },
       "enableCoboAgent": {
-        "value": "${ENABLE_COBO_AGENT=true}"
+        "value": "${ENABLE_COBO_AGENT}"
       }
     }
 }

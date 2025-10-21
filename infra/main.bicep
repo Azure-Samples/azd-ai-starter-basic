@@ -46,7 +46,7 @@ var aiProjectConnections array = json(aiProjectConnectionsJson)
 var aiProjectDependentResources array = json(aiProjectDependentResourcesJson)
 
 @description('Enable COBO agent deployment')
-param enableCoboAgent bool = true
+param enableCoboAgent bool
 
 // Tags that should be applied to all resources.
 // 
@@ -64,6 +64,16 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
+// Build dependent resources array conditionally
+// Check if ACR already exists in the user-provided array to avoid duplicates
+var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'AzureContainerRegistry')
+var dependentResources = enableCoboAgent && !hasAcr ? union(aiProjectDependentResources, [
+  {
+    resource: 'AzureContainerRegistry'
+    connection_name: 'acr-connection'
+  }
+]) : aiProjectDependentResources
+
 // AI Project module
 module aiProject 'core/ai/ai-project.bicep' = {
   scope: rg
@@ -77,7 +87,7 @@ module aiProject 'core/ai/ai-project.bicep' = {
     existingAiAccountName: aiFoundryResourceName
     deployments: aiProjectDeployments
     connections: aiProjectConnections
-    additionalDependentResources: aiProjectDependentResources
+    additionalDependentResources: dependentResources
   }
 }
 
