@@ -216,6 +216,7 @@ module azureAiSearch './dependencies/azure_ai_search.bicep' = if (hasSearchConne
 
 // Outputs
 output ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API']
+output aiServicesEndpoint string = aiAccount.properties.endpoint
 output projectId string = aiAccount::project.id
 output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
@@ -224,6 +225,7 @@ output aiServicesPrincipalId string = aiAccount.identity.principalId
 // Grouped dependent resources outputs
 output dependentResources object = {
   containerRegistry: {
+    name: hasAcrConnection ? acr!.outputs.containerRegistryName : ''
     loginServer: hasAcrConnection ? acr!.outputs.containerRegistryLoginServer : ''
     connectionName: hasAcrConnection ? acr!.outputs.containerRegistryConnectionName : ''
   }
