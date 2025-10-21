@@ -34,9 +34,6 @@
       },
       "enableCoboAgent": {
         "value": "${ENABLE_COBO_AGENT=true}"
-      },
-      "agentName": {
-        "value": "${AGENT_NAME=calculator-agent}"
       }
     }
 }

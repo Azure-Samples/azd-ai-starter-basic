@@ -48,9 +48,6 @@ var aiProjectDependentResources array = json(aiProjectDependentResourcesJson)
 @description('Enable COBO agent deployment')
 param enableCoboAgent bool = true
 
-@description('Name to identify the COBO agent in AI Foundry')
-param agentName string = 'calculator-agent'
-
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -99,7 +96,7 @@ module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = i
 }
 
 // COBO Agent module
-module coboAgent 'cobo-agent.bicep' = if (enableCoboAgent) {
+module coboAgent 'core/ai/cobo-agent.bicep' = if (enableCoboAgent) {
   scope: rg
   name: 'cobo-agent'
   params: {
@@ -138,13 +135,12 @@ output BING_CONNECTION_ID string = aiProject.outputs.dependentResources.bingSear
 // COBO Agent outputs
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = enableCoboAgent ? containerAppsEnvironment!.outputs.name : ''
 output AZURE_CONTAINER_REGISTRY_NAME string = aiProject.outputs.dependentResources.containerRegistry.name
-output SERVICE_API_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_IDENTITY_PRINCIPAL_ID : ''
+output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
 output SERVICE_API_NAME string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_NAME : ''
 output SERVICE_API_URI string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_URI : ''
 output SERVICE_API_IMAGE_NAME string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_IMAGE_NAME : ''
 output SERVICE_API_RESOURCE_ID string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_RESOURCE_ID : ''
 output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_PRINCIPAL_ID : ''
 output AI_FOUNDRY_PROJECT_TENANT_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_TENANT_ID : ''
-output AGENT_NAME string = agentName
 output AI_FOUNDRY_RESOURCE_ID string = '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/${aiProject.outputs.aiServicesAccountName}'
 output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.projectId
