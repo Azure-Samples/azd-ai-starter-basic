@@ -33,7 +33,7 @@ resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-3
   location: location
 }
 
-module app 'core/host/container-app-upsert.bicep' = {
+module app '../host/container-app-upsert.bicep' = {
   name: '${serviceName}-container-app-module'
   params: {
     name: name
@@ -68,7 +68,7 @@ module app 'core/host/container-app-upsert.bicep' = {
 
 // Grant Container Apps Contributor role to AI Foundry Project's system-assigned identity on the Container App
 // Role definition ID for "Container Apps Contributor" is: 358470bc-b998-42bd-ab17-a7e34c199c0f
-module roleAssignment 'core/security/container-app-role.bicep' = {
+module roleAssignment '../security/container-app-role.bicep' = {
   name: '${serviceName}-role-assignment'
   params: {
     containerAppName: app.outputs.name
@@ -91,7 +91,7 @@ resource aiUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-0
 }
 
 
-output SERVICE_API_IDENTITY_PRINCIPAL_ID string = apiIdentity.properties.principalId
+output COBO_ACA_IDENTITY_PRINCIPAL_ID string = apiIdentity.properties.principalId
 output SERVICE_API_NAME string = app.outputs.name
 output SERVICE_API_URI string = app.outputs.uri
 output SERVICE_API_IMAGE_NAME string = app.outputs.imageName
