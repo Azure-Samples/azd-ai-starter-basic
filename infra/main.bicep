@@ -133,12 +133,7 @@ output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResourc
 output BING_CONNECTION_ID string = aiProject.outputs.dependentResources.bingSearch.connectionId
 
 // COBO Agent outputs
-output AZURE_CONTAINER_ENVIRONMENT_NAME string = enableCoboAgent ? containerAppsEnvironment!.outputs.name : ''
-output AZURE_CONTAINER_REGISTRY_NAME string = aiProject.outputs.dependentResources.containerRegistry.name
 output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
-output SERVICE_API_NAME string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_NAME : ''
-output SERVICE_API_URI string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_URI : ''
-output SERVICE_API_IMAGE_NAME string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_IMAGE_NAME : ''
 output SERVICE_API_RESOURCE_ID string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_RESOURCE_ID : ''
 output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_PRINCIPAL_ID : ''
 output AI_FOUNDRY_PROJECT_TENANT_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_TENANT_ID : ''

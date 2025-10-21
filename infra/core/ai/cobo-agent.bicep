@@ -92,9 +92,6 @@ resource aiUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-0
 
 
 output COBO_ACA_IDENTITY_PRINCIPAL_ID string = apiIdentity.properties.principalId
-output SERVICE_API_NAME string = app.outputs.name
-output SERVICE_API_URI string = app.outputs.uri
-output SERVICE_API_IMAGE_NAME string = app.outputs.imageName
 output SERVICE_API_RESOURCE_ID string = app.outputs.resourceId
 output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = aiAccount::project.identity.principalId
 output AI_FOUNDRY_PROJECT_TENANT_ID string = aiAccount::project.identity.tenantId
