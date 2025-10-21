@@ -33,7 +33,7 @@ resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-3
   location: location
 }
 
-module app '../host/container-app-upsert.bicep' = {
+module app '../host/container-app.bicep' = {
   name: '${serviceName}-container-app-module'
   params: {
     name: name
@@ -43,6 +43,7 @@ module app '../host/container-app-upsert.bicep' = {
     containerAppsEnvironmentName: containerAppsEnvironmentName
     containerRegistryName: containerRegistryName
     targetPort: 8088
+    imageName: ''  // Empty during provision, azd deploy will update with actual image
     authEnabled: false  // Authentication will be configured by postdeploy script
     authAppId: ''
     authIssuerUrl: ''
