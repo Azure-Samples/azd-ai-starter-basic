@@ -69,7 +69,6 @@ graph TB
     ACA --> ACR
     ACA --> MI
     MI --> RBAC
-    ACA --> Learn
     
     %% Styling
     classDef primary fill:#0078d4,stroke:#005a9e,stroke-width:2px,color:#fff
@@ -80,7 +79,6 @@ graph TB
     class AIF,AIS,Models primary
     class ACA,ACR,ACAE secondary
     class Storage,Search,Bing optional
-    class Learn external
 ```
 
 This architecture shows how the Azure AI Foundry starter template creates a complete environment for AI agent development and deployment, with optional components that can be enabled based on your needs.
