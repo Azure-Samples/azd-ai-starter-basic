@@ -149,3 +149,5 @@ output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.out
 output AI_FOUNDRY_PROJECT_TENANT_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_TENANT_ID : ''
 output AI_FOUNDRY_RESOURCE_ID string = '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/${aiProject.outputs.aiServicesAccountName}'
 output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.projectId
+// Mock output of AGENT_NAME which should be populated by azd extension by reading from agent.yaml
+output AGENT_NAME string = 'Cobo Calculator Agent'

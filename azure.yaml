@@ -9,3 +9,24 @@ requiredVersions:
   extensions:
     # the azd ai agent extension is required for this template
     "azure.foundry.ai.agents": ">=0.0.1"
+
+services:
+  cobo-agent:
+    project: .
+    language: py
+    host: containerapp
+    docker:
+      remoteBuild: true
+
+hooks:
+  postdeploy:
+    windows:
+      shell: pwsh
+      run: ./scripts/postdeploy.ps1
+      continueOnError: true
+      interactive: true
+    posix:
+      shell: sh
+      run: ./scripts/postdeploy.sh
+      continueOnError: true
+      interactive: true

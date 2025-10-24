@@ -1,0 +1,27 @@
+agent:
+  kind: container
+  name: Cobo Calculator Agent
+  description: This Agent can perform basic arithmetic calculations such as addition, subtraction, multiplication, and division.
+  metadata:
+    example:
+      - role: user
+        content: |-
+          What's 3 / 1.5 + 2?
+    tags:
+      - example
+      - learning
+    authors:
+      - migu
+
+  models:
+    - id: gpt-4o-mini
+      provider: azure
+      deployment: {{model_deployment_name}}
+
+parameters:
+  model_deployment_name:
+    schema:
+      type: string
+      default: gpt-4o-mini
+    description: the name of your model deployment
+    required: true
