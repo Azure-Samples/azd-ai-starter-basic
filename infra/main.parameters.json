@@ -32,8 +32,11 @@
       "aiProjectDependentResourcesJson": {
         "value": "${AI_PROJECT_DEPENDENT_RESOURCES:=[]}"
       },
-      "enableCoboAgent": {
-        "value": "${ENABLE_COBO_AGENT}"
+      "enableHostedAgents": {
+        "value": "${ENABLE_HOSTED_AGENTS}"
+      },
+      "enableContainerAgents": {
+        "value": "${ENABLE_CONTAINER_AGENTS}"
       }
     }
 }
