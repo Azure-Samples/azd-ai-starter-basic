@@ -24,7 +24,7 @@
         "value": "${AZURE_PRINCIPAL_TYPE}"
       },
       "aiProjectDeploymentsJson": {
-        "value": "${AI_PROJECT_DEPLOYMENTS:=[]}"
+        "value": "[{\"name\":\"gpt-4o-mini\",\"model\":{\"name\":\"gpt-4o-mini\",\"format\":\"OpenAI\",\"version\":\"2024-07-18\"},\"sku\":{\"name\":\"GlobalStandard\",\"capacity\":50}}]"
       },
       "aiProjectConnectionsJson": {
         "value": "${AI_PROJECT_CONNECTIONS:=[]}"
