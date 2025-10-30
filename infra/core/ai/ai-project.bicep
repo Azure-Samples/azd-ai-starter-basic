@@ -163,6 +163,7 @@ module acr './dependencies/acr.bicep' = if (hasAcrConnection) {
     principalId: principalId
     principalType: principalType
     aiServicesAccountName: aiAccount.name
+    aiServicesProjectName: aiAccount::project.name
     aiProjectName: aiAccount::project.name
   }
 }

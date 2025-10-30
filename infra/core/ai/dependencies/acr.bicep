@@ -15,15 +15,22 @@ param principalType string
 @description('AI Services account name to get managed identity')
 param aiServicesAccountName string
 
+@description('AI project name for creating the connection')
+param aiServicesProjectName string
+
 @description('Resource name for the container registry')
 param resourceName string
 
 @description('Name for the AI Foundry ACR connection')
 param connectionName string = 'acr-connection'
 
-// Get reference to the AI Services account to access its managed identity
+// Get reference to the AI Services account and project to access their managed identities
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
   name: aiServicesAccountName
+
+  resource aiProject 'projects' existing = {
+    name: aiServicesProjectName
+  }
 }
 
 module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' = {
@@ -41,7 +48,7 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
       }
       {
         // the foundry project itself can pull from the ACR
-        principalId: aiAccount.identity.principalId
+        principalId: aiAccount::aiProject.identity.principalId
         principalType: 'ServicePrincipal'
         roleDefinitionIdOrName: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
       }
@@ -64,7 +71,7 @@ module acrConnection '../connection.bicep' = {
       target: containerRegistry.outputs.loginServer
       authType: 'ManagedIdentity'
       credentials: {
-        clientId: aiAccount.identity.principalId
+        clientId: aiAccount::aiProject.identity.principalId
         resourceId: containerRegistry.outputs.resourceId
       }
       isSharedToAll: true
