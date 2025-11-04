@@ -67,7 +67,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
       ipRules: []
     }
     publicNetworkAccess: 'Enabled'
-    disableLocalAuth: false
+    disableLocalAuth: true
   }
   
   @batchSize(1)
