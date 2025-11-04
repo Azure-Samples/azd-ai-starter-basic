@@ -45,8 +45,11 @@ var aiProjectDeployments array = json(aiProjectDeploymentsJson)
 var aiProjectConnections array = json(aiProjectConnectionsJson)
 var aiProjectDependentResources array = json(aiProjectDependentResourcesJson)
 
-@description('Enable COBO agent deployment')
-param enableCoboAgent bool
+@description('Enable hosted agent deployment')
+param enableHostedAgents bool
+
+@description('Enable container-based agent deployment')
+param enableContainerAgents bool
 
 // Tags that should be applied to all resources.
 // 
@@ -67,7 +70,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // Build dependent resources array conditionally
 // Check if ACR already exists in the user-provided array to avoid duplicates
 var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'AzureContainerRegistry')
-var dependentResources = enableCoboAgent && !hasAcr ? union(aiProjectDependentResources, [
+var dependentResources = (enableHostedAgents || enableContainerAgents) && !hasAcr ? union(aiProjectDependentResources, [
   {
     resource: 'AzureContainerRegistry'
     connection_name: 'acr-connection'
@@ -95,7 +98,7 @@ var resourceToken = toLower(uniqueString(subscription().id, rg.id, location))
 var prefix = 'ca-${environmentName}-${resourceToken}'
 
 // Container Apps Environment for COBO agent
-module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = if (enableCoboAgent) {
+module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = if (enableContainerAgents) {
   scope: rg
   name: 'container-apps-environment'
   params: {
@@ -106,7 +109,7 @@ module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = i
 }
 
 // COBO Agent module
-module coboAgent 'core/ai/cobo-agent.bicep' = if (enableCoboAgent) {
+module coboAgent 'core/ai/cobo-agent.bicep' = if (enableContainerAgents) {
   scope: rg
   name: 'cobo-agent'
   params: {
@@ -143,9 +146,9 @@ output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResourc
 output BING_CONNECTION_ID string = aiProject.outputs.dependentResources.bingSearch.connectionId
 
 // COBO Agent outputs
-output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
-output SERVICE_API_RESOURCE_ID string = enableCoboAgent ? coboAgent!.outputs.SERVICE_API_RESOURCE_ID : ''
-output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_PRINCIPAL_ID : ''
-output AI_FOUNDRY_PROJECT_TENANT_ID string = enableCoboAgent ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_TENANT_ID : ''
+output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableContainerAgents ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
+output SERVICE_API_RESOURCE_ID string = enableContainerAgents ? coboAgent!.outputs.SERVICE_API_RESOURCE_ID : ''
+output AI_FOUNDRY_PROJECT_PRINCIPAL_ID string = enableContainerAgents ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_PRINCIPAL_ID : ''
+output AI_FOUNDRY_PROJECT_TENANT_ID string = enableContainerAgents ? coboAgent!.outputs.AI_FOUNDRY_PROJECT_TENANT_ID : ''
 output AI_FOUNDRY_RESOURCE_ID string = '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/${aiProject.outputs.aiServicesAccountName}'
 output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.projectId

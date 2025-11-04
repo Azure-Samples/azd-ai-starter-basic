@@ -24,16 +24,20 @@
         "value": "${AZURE_PRINCIPAL_TYPE}"
       },
       "aiProjectDeploymentsJson": {
-        "value": "${AI_PROJECT_DEPLOYMENTS:=[]}"
+        "value": "${AI_PROJECT_DEPLOYMENTS=[]}"
       },
       "aiProjectConnectionsJson": {
-        "value": "${AI_PROJECT_CONNECTIONS:=[]}"
+        "value": "${AI_PROJECT_CONNECTIONS=[]}"
       },
       "aiProjectDependentResourcesJson": {
-        "value": "${AI_PROJECT_DEPENDENT_RESOURCES:=[]}"
+        "value": "${AI_PROJECT_DEPENDENT_RESOURCES=[]}"
       },
-      "enableCoboAgent": {
-        "value": "${ENABLE_COBO_AGENT}"
+      "enableHostedAgents": {
+        "value": "${ENABLE_HOSTED_AGENTS=false}"
+      },
+      "enableContainerAgents": {
+        "value": "${ENABLE_CONTAINER_AGENTS=false}"
       }
     }
 }
+
