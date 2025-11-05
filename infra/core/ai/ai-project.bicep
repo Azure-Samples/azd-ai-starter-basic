@@ -216,7 +216,8 @@ module azureAiSearch './dependencies/azure_ai_search.bicep' = if (hasSearchConne
 
 
 // Outputs
-output ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API']
+output AZURE_AI_PROJECT_ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API']
+output AZURE_OPENAI_ENDPOINT string = aiAccount::project.properties.endpoints['OpenAI']
 output aiServicesEndpoint string = aiAccount.properties.endpoint
 output projectId string = aiAccount::project.id
 output aiServicesAccountName string = aiAccount.name
