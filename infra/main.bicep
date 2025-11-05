@@ -128,7 +128,8 @@ module coboAgent 'core/ai/cobo-agent.bicep' = if (enableContainerAgents) {
 
 
 output AZURE_RESOURCE_GROUP string = resourceGroupName
-output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.ENDPOINT
+output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
+output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.AZURE_OPENAI_ENDPOINT
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.containerRegistry.loginServer
 output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.containerRegistry.connectionName
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
