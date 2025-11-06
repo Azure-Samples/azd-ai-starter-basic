@@ -133,6 +133,16 @@ resource localUserCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/r
   }
 }
 
+resource projectCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: aiAccount
+  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, '64702f94-c441-49e6-a78b-ef80e0188fee')
+  properties: {
+    principalId: aiAccount::project.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '64702f94-c441-49e6-a78b-ef80e0188fee')
+  }
+}
+
 
 // All connections are now created directly within their respective resource modules
 // using the centralized ./connection.bicep module
