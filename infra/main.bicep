@@ -69,11 +69,11 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 
 // Build dependent resources array conditionally
 // Check if ACR already exists in the user-provided array to avoid duplicates
-var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'AzureContainerRegistry')
+var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'registry')
 var dependentResources = (enableHostedAgents || enableContainerAgents) && !hasAcr ? union(aiProjectDependentResources, [
   {
-    resource: 'AzureContainerRegistry'
-    connection_name: 'acr-connection'
+    resource: 'registry'
+    connectionName: 'acr-connection'
   }
 ]) : aiProjectDependentResources
 
@@ -118,7 +118,7 @@ module coboAgent 'core/ai/cobo-agent.bicep' = if (enableContainerAgents) {
     tags: tags
     identityName: '${prefix}-id'
     containerAppsEnvironmentName: containerAppsEnvironment!.outputs.name
-    containerRegistryName: aiProject.outputs.dependentResources.containerRegistry.name
+    containerRegistryName: aiProject.outputs.dependentResources.registry.name
     openaiEndpoint: aiProject.outputs.aiServicesEndpoint
     openaiApiVersion: '2025-03-01-preview'
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
@@ -130,21 +130,22 @@ module coboAgent 'core/ai/cobo-agent.bicep' = if (enableContainerAgents) {
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
 output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.AZURE_OPENAI_ENDPOINT
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.containerRegistry.loginServer
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.containerRegistry.connectionName
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.registry.loginServer
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.registry.connectionName
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
-output BING_SEARCH_NAME string = aiProject.outputs.dependentResources.bingSearch.name
-output BING_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.bingSearch.connectionName
-output BING_CUSTOM_SEARCH_NAME string = aiProject.outputs.dependentResources.bingCustomSearch.name
-output BING_CUSTOM_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.bingCustomSearch.connectionName
+output BING_GROUNDING_RESOURCE_NAME string = aiProject.outputs.dependentResources.bing_grounding.name
+output BING_GROUNDING_CONNECTION_NAME string = aiProject.outputs.dependentResources.bing_grounding.connectionName
+output BING_CUSTOM_GROUNDING_NAME string = aiProject.outputs.dependentResources.bing_custom_grounding.name
+output BING_CUSTOM_GROUNDING_CONNECTION_NAME string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionName
 output AZURE_AI_SEARCH_SERVICE_NAME string = aiProject.outputs.dependentResources.search.serviceName
 output AZURE_AI_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.search.connectionName
 output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.dependentResources.storage.accountName
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResources.storage.connectionName
 
 // naming convention required in Agent Framework
-output BING_CONNECTION_ID string = aiProject.outputs.dependentResources.bingSearch.connectionId
+// output BING_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_grounding.connectionId
+// output BING_CUSTOM_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionId
 
 // COBO Agent outputs
 output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableContainerAgents ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
