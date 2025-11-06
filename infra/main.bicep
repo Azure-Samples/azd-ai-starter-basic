@@ -118,7 +118,7 @@ module coboAgent 'core/ai/cobo-agent.bicep' = if (enableContainerAgents) {
     tags: tags
     identityName: '${prefix}-id'
     containerAppsEnvironmentName: containerAppsEnvironment!.outputs.name
-    containerRegistryName: aiProject.outputs.dependentResources.containerRegistry.name
+    containerRegistryName: aiProject.outputs.dependentResources.registry.name
     openaiEndpoint: aiProject.outputs.aiServicesEndpoint
     openaiApiVersion: '2025-03-01-preview'
     aiServicesAccountName: aiProject.outputs.aiServicesAccountName
@@ -130,8 +130,8 @@ module coboAgent 'core/ai/cobo-agent.bicep' = if (enableContainerAgents) {
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
 output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.AZURE_OPENAI_ENDPOINT
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.containerRegistry.loginServer
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.containerRegistry.connectionName
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.registry.loginServer
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.registry.connectionName
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
 output BING_GROUNDING_RESOURCE_NAME string = aiProject.outputs.dependentResources.bing_grounding.name
@@ -144,8 +144,8 @@ output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.dependentResources.
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResources.storage.connectionName
 
 // naming convention required in Agent Framework
-output BING_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_grounding.connectionId
-output BING_CUSTOM_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionId
+// output BING_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_grounding.connectionId
+// output BING_CUSTOM_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionId
 
 // COBO Agent outputs
 output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableContainerAgents ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
