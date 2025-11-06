@@ -69,10 +69,10 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 
 // Build dependent resources array conditionally
 // Check if ACR already exists in the user-provided array to avoid duplicates
-var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'AzureContainerRegistry')
+var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'registry')
 var dependentResources = (enableHostedAgents || enableContainerAgents) && !hasAcr ? union(aiProjectDependentResources, [
   {
-    resource: 'AzureContainerRegistry'
+    resource: 'registry'
     connection_name: 'acr-connection'
   }
 ]) : aiProjectDependentResources
