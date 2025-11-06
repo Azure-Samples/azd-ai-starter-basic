@@ -73,7 +73,7 @@ var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'regist
 var dependentResources = (enableHostedAgents || enableContainerAgents) && !hasAcr ? union(aiProjectDependentResources, [
   {
     resource: 'registry'
-    connection_name: 'acr-connection'
+    connectionName: 'acr-connection'
   }
 ]) : aiProjectDependentResources
 
