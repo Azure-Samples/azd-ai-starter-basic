@@ -236,17 +236,17 @@ output aiServicesPrincipalId string = aiAccount.identity.principalId
 
 // Grouped dependent resources outputs
 output dependentResources object = {
-  containerRegistry: {
+  registry: {
     name: hasAcrConnection ? acr!.outputs.containerRegistryName : ''
     loginServer: hasAcrConnection ? acr!.outputs.containerRegistryLoginServer : ''
     connectionName: hasAcrConnection ? acr!.outputs.containerRegistryConnectionName : ''
   }
-  bingSearch: {
+  bing_grounding: {
     name: (hasBingConnection) ? bingGrounding!.outputs.bingSearchName : ''
     connectionName: (hasBingConnection) ? bingGrounding!.outputs.bingSearchConnectionName : ''
     connectionId: (hasBingConnection) ? bingGrounding!.outputs.bingSearchConnectionId : ''
   }
-  bingCustomSearch: {
+  bing_custom_grounding: {
     name: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
     connectionName: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
   }

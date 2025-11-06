@@ -134,17 +134,18 @@ output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentRes
 output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.containerRegistry.connectionName
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
-output BING_SEARCH_NAME string = aiProject.outputs.dependentResources.bingSearch.name
-output BING_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.bingSearch.connectionName
-output BING_CUSTOM_SEARCH_NAME string = aiProject.outputs.dependentResources.bingCustomSearch.name
-output BING_CUSTOM_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.bingCustomSearch.connectionName
+output BING_GROUNDING_RESOURCE_NAME string = aiProject.outputs.dependentResources.bing_grounding.name
+output BING_GROUNDING_CONNECTION_NAME string = aiProject.outputs.dependentResources.bing_grounding.connectionName
+output BING_CUSTOM_GROUNDING_NAME string = aiProject.outputs.dependentResources.bing_custom_grounding.name
+output BING_CUSTOM_GROUNDING_CONNECTION_NAME string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionName
 output AZURE_AI_SEARCH_SERVICE_NAME string = aiProject.outputs.dependentResources.search.serviceName
 output AZURE_AI_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.search.connectionName
 output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.dependentResources.storage.accountName
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResources.storage.connectionName
 
 // naming convention required in Agent Framework
-output BING_CONNECTION_ID string = aiProject.outputs.dependentResources.bingSearch.connectionId
+output BING_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_grounding.connectionId
+output BING_CUSTOM_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionId
 
 // COBO Agent outputs
 output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableContainerAgents ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
