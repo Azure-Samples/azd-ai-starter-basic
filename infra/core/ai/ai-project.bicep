@@ -26,24 +26,24 @@ param existingAiAccountName string = ''
 param connections array = []
 
 @description('Also provision dependent resources and connect to the project')
-param additionalDependentResources  array = []
+param additionalDependentResources dependentResourcesType
 
 // Load abbreviations
 var abbrs = loadJsonContent('../../abbreviations.json')
 
 // Determine which resources to create based on connections
-var hasStorageConnection = length(filter(additionalDependentResources, conn => conn.resource == 'AzureStorage')) > 0
-var hasAcrConnection = length(filter(additionalDependentResources, conn => conn.resource == 'AzureContainerRegistry')) > 0
-var hasSearchConnection = length(filter(additionalDependentResources, conn => conn.resource == 'AzureAISearch')) > 0
-var hasBingConnection = length(filter(additionalDependentResources, conn => conn.resource == 'BingSearch')) > 0
-var hasBingCustomConnection = length(filter(additionalDependentResources, conn => conn.resource == 'BingCustomSearch')) > 0
+var hasStorageConnection = length(filter(additionalDependentResources, conn => conn.resource == 'storage')) > 0
+var hasAcrConnection = length(filter(additionalDependentResources, conn => conn.resource == 'registry')) > 0
+var hasSearchConnection = length(filter(additionalDependentResources, conn => conn.resource == 'azure_ai_search')) > 0
+var hasBingConnection = length(filter(additionalDependentResources, conn => conn.resource == 'bing_grounding')) > 0
+var hasBingCustomConnection = length(filter(additionalDependentResources, conn => conn.resource == 'bing_custom_grounding')) > 0
 
 // Extract connection names from ai.yaml for each resource type
-var storageConnectionName = hasStorageConnection ? filter(additionalDependentResources, conn => conn.resource == 'AzureStorage')[0].connection_name : ''
-var acrConnectionName = hasAcrConnection ? filter(additionalDependentResources, conn => conn.resource == 'AzureContainerRegistry')[0].connection_name : ''
-var searchConnectionName = hasSearchConnection ? filter(additionalDependentResources, conn => conn.resource == 'AzureAISearch')[0].connection_name : ''
-var bingConnectionName = hasBingConnection ? filter(additionalDependentResources, conn => conn.resource == 'BingSearch')[0].connection_name : ''
-var bingCustomConnectionName = hasBingCustomConnection ? filter(additionalDependentResources, conn => conn.resource == 'BingCustomSearch')[0].connection_name : ''
+var storageConnectionName = hasStorageConnection ? filter(additionalDependentResources, conn => conn.resource == 'storage')[0].connectionName : ''
+var acrConnectionName = hasAcrConnection ? filter(additionalDependentResources, conn => conn.resource == 'registry')[0].connectionName : ''
+var searchConnectionName = hasSearchConnection ? filter(additionalDependentResources, conn => conn.resource == 'azure_ai_search')[0].connectionName : ''
+var bingConnectionName = hasBingConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_grounding')[0].connectionName : ''
+var bingCustomConnectionName = hasBingCustomConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_custom_grounding')[0].connectionName : ''
 
 // Always create a new AI Account for now (simplified approach)
 // TODO: Add support for existing accounts in a future version
@@ -275,3 +275,11 @@ type deploymentsType = {
     capacity: int
   }
 }[]?
+
+type dependentResourcesType = {
+  @description('The type of dependent resource to create')
+  resource: 'storage' | 'registry' | 'azure_ai_search' | 'bing_grounding' | 'bing_custom_grounding'
+  
+  @description('The connection name for this resource')
+  connectionName: string
+}[]
