@@ -28,6 +28,9 @@ param connections array = []
 @description('Also provision dependent resources and connect to the project')
 param additionalDependentResources dependentResourcesType
 
+@description('Enable hosted agent deployment')
+param enableHostedAgents bool = false
+
 // Load abbreviations
 var abbrs = loadJsonContent('../../abbreviations.json')
 
@@ -95,6 +98,15 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
       seqDeployments
     ]
   }
+
+}
+
+resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/capabilityHosts@2025-06-01' = if (enableHostedAgents) {
+	name: 'agents'
+	parent: aiAccount
+	properties: {
+		capabilityHostKind: 'Agents'
+	}
 }
 
 // Create connections from ai.yaml configuration

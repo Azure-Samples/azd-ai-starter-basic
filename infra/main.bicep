@@ -91,6 +91,7 @@ module aiProject 'core/ai/ai-project.bicep' = {
     deployments: aiProjectDeployments
     connections: aiProjectConnections
     additionalDependentResources: dependentResources
+    enableHostedAgents: enableHostedAgents
   }
 }
 
