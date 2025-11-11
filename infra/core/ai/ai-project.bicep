@@ -8,8 +8,8 @@ param location string
 
 var resourceToken = uniqueString(subscription().id, resourceGroup().id, location)
 
-@description('The name of the environment')
-param envName string
+@description('Name of the project')
+param aiFoundryProjectName string
 
 param deployments deploymentsType
 
@@ -82,14 +82,14 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
   ]
 
   resource project 'projects' = {
-    name: envName
+    name: aiFoundryProjectName
     location: location
     identity: {
       type: 'SystemAssigned'
     }
     properties: {
-      description: '${envName} Project'
-      displayName: '${envName}Project'
+      description: '${aiFoundryProjectName} Project'
+      displayName: '${aiFoundryProjectName}Project'
     }
     dependsOn: [
       seqDeployments
@@ -233,6 +233,7 @@ output projectId string = aiAccount::project.id
 output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
 output aiServicesPrincipalId string = aiAccount.identity.principalId
+output projectName string = aiAccount::project.name
 
 // Grouped dependent resources outputs
 output dependentResources object = {
@@ -249,6 +250,7 @@ output dependentResources object = {
   bing_custom_grounding: {
     name: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
     connectionName: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
+    connectionId: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionId : ''
   }
   search: {
     serviceName: hasSearchConnection ? azureAiSearch!.outputs.searchServiceName : ''
