@@ -32,6 +32,9 @@ param principalType string
 @description('Optional. Name of an existing AI Services account within the resource group. If not provided, a new one will be created.')
 param aiFoundryResourceName string = ''
 
+@description('Optional. Name of the AI Foundry project. If not provided, a default name will be used.')
+param aiFoundryProjectName string = 'ai-project-${environmentName}'
+
 @description('List of model deployments')
 param aiProjectDeploymentsJson string = '[]'
 
@@ -81,7 +84,7 @@ module aiProject 'core/ai/ai-project.bicep' = {
   params: {
     tags: tags
     location: aiDeploymentsLocation
-    envName: environmentName
+    aiFoundryProjectName: aiFoundryProjectName
     principalId: principalId
     principalType: principalType
     existingAiAccountName: aiFoundryResourceName
@@ -97,6 +100,7 @@ output AI_FOUNDRY_RESOURCE_ID string = '/subscriptions/${subscription().subscrip
 output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.projectId
 output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
+output AZURE_AI_FOUNDRY_PROJECT_NAME string = aiProject.outputs.projectName
 
 // Endpoints
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
@@ -105,18 +109,18 @@ output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.AZURE_OPENAI_ENDPOINT
 // Dependent Resources and Connections
 
 // ACR
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.containerRegistry.connectionName
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.containerRegistry.loginServer
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = aiProject.outputs.dependentResources.registry.connectionName
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aiProject.outputs.dependentResources.registry.loginServer
 
 // Bing Search
-output BING_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.bingSearch.connectionName
-output BING_SEARCH_NAME string = aiProject.outputs.dependentResources.bingSearch.name
-output BING_CONNECTION_ID string = aiProject.outputs.dependentResources.bingSearch.connectionId
+output BING_GROUNDING_CONNECTION_NAME  string = aiProject.outputs.dependentResources.bing_grounding.connectionName
+output BING_GROUNDING_RESOURCE_NAME string = aiProject.outputs.dependentResources.bing_grounding.name
+output BING_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_grounding.connectionId
 
 // Bing Custom Search
-output BING_CUSTOM_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.bingCustomSearch.connectionName
-output BING_CUSTOM_SEARCH_NAME string = aiProject.outputs.dependentResources.bingCustomSearch.name
-output BING_CUSTOM_SEARCH_CONNECTION_ID string = aiProject.outputs.dependentResources.bingCustomSearch.connectionId
+output BING_CUSTOM_GROUNDING_CONNECTION_NAME string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionName
+output BING_CUSTOM_GROUNDING_NAME string = aiProject.outputs.dependentResources.bing_custom_grounding.name
+output BING_CUSTOM_GROUNDING_CONNECTION_ID string = aiProject.outputs.dependentResources.bing_custom_grounding.connectionId
 
 // Azure AI Search
 output AZURE_AI_SEARCH_CONNECTION_NAME string = aiProject.outputs.dependentResources.search.connectionName

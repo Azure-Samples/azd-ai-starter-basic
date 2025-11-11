@@ -14,6 +14,9 @@
       "aiFoundryResourceName": {
         "value": "${AZURE_AI_FOUNDRY_RESOURCE_NAME}"
       },
+      "aiFoundryProjectName": {
+        "value": "${AZURE_AI_FOUNDRY_PROJECT_NAME}"
+      },
       "aiDeploymentsLocation": {
         "value": "${AZURE_LOCATION}"
       },
