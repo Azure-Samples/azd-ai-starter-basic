@@ -99,8 +99,8 @@ output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AI_FOUNDRY_RESOURCE_ID string = '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/${aiProject.outputs.aiServicesAccountName}'
 output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.projectId
 output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
-output AZURE_AI_FOUNDRY_RESOURCE_NAME string = aiProject.outputs.aiServicesAccountName
-output AZURE_AI_FOUNDRY_PROJECT_NAME string = aiProject.outputs.projectName
+output AZURE_AI_ACCOUNT_NAME string = aiProject.outputs.aiServicesAccountName
+output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
 
 // Endpoints
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
