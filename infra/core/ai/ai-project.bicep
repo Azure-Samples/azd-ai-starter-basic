@@ -135,11 +135,11 @@ resource localUserCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/r
 
 resource projectCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: aiAccount
-  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, '64702f94-c441-49e6-a78b-ef80e0188fee')
+  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, '53ca6127-db72-4b80-b1b0-d745d6d5456d')
   properties: {
     principalId: aiAccount::project.identity.principalId
     principalType: 'ServicePrincipal'
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '64702f94-c441-49e6-a78b-ef80e0188fee')
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')
   }
 }
 
