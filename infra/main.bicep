@@ -51,6 +51,9 @@ var aiProjectDependentResources = json(aiProjectDependentResourcesJson)
 @description('Enable hosted agent deployment')
 param enableHostedAgents bool
 
+@description('Enable monitoring for the AI project')
+param enableMonitoring bool = true
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -91,6 +94,7 @@ module aiProject 'core/ai/ai-project.bicep' = {
     deployments: aiProjectDeployments
     connections: aiProjectConnections
     additionalDependentResources: dependentResources
+    enableMonitoring: enableMonitoring
     enableHostedAgents: enableHostedAgents
   }
 }

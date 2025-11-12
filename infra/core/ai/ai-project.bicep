@@ -28,6 +28,9 @@ param connections array = []
 @description('Also provision dependent resources and connect to the project')
 param additionalDependentResources dependentResourcesType
 
+@description('Enable monitoring via appinsights and log analytics')
+param enableMonitoring bool = true
+
 @description('Enable hosted agent deployment')
 param enableHostedAgents bool = false
 
@@ -47,6 +50,26 @@ var acrConnectionName = hasAcrConnection ? filter(additionalDependentResources, 
 var searchConnectionName = hasSearchConnection ? filter(additionalDependentResources, conn => conn.resource == 'azure_ai_search')[0].connectionName : ''
 var bingConnectionName = hasBingConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_grounding')[0].connectionName : ''
 var bingCustomConnectionName = hasBingCustomConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_custom_grounding')[0].connectionName : ''
+
+// Enable monitoring via Log Analytics and Application Insights
+module logAnalytics '../monitor/loganalytics.bicep' = if (enableMonitoring) {
+  name: 'logAnalytics'
+  params: {
+    location: location
+    tags: tags
+    name: 'logs-${resourceToken}'
+  }
+}
+
+module applicationInsights '../monitor/applicationinsights.bicep' = if (enableMonitoring) {
+  name: 'applicationInsights'
+  params: {
+    location: location
+    tags: tags
+    name: 'appi-${resourceToken}'
+    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+  }
+}
 
 // Always create a new AI Account for now (simplified approach)
 // TODO: Add support for existing accounts in a future version
@@ -109,7 +132,26 @@ resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/ca
 	}
 }
 
-// Create connections from ai.yaml configuration
+// Create connection towards appinsights
+resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
+  parent: aiAccount::project
+  name: 'appi-connection'
+  properties: {
+    category: 'AppInsights'
+    target: applicationInsights.outputs.id
+    authType: 'ApiKey'
+    isSharedToAll: true
+    credentials: {
+      key: applicationInsights.outputs.instrumentationKey
+    }
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: applicationInsights.outputs.id
+    }
+  }
+}
+
+// Create additional connections from ai.yaml configuration
 module aiConnections './connection.bicep' = [for (connection, index) in connections: {
   name: 'connection-${connection.name}'
   params: {
