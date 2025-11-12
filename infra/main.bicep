@@ -110,6 +110,7 @@ output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
 // Endpoints
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
 output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.AZURE_OPENAI_ENDPOINT
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = aiProject.outputs.APPLICATIONINSIGHTS_CONNECTION_STRING
 
 // Dependent Resources and Connections
 
