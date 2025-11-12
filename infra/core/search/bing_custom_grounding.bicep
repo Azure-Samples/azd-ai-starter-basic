@@ -6,14 +6,23 @@ param tags object = {}
 @description('Bing custom grounding resource name')
 param resourceName string
 
-@description('AI Services account managed identity principal ID')
-param aiAccountPrincipalId string
+@description('AI Services account name for the project parent')
+param aiServicesAccountName string = ''
 
-@description('AI Services account name for role assignment naming')
-param aiAccountName string
+@description('AI project name for creating the connection')
+param aiProjectName string = ''
 
 @description('Name for the AI Foundry Bing Custom Search connection')
 param connectionName string = 'bing-custom-grounding-connection'
+
+// Get reference to the AI Services account and project to access their managed identities
+resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
+  name: aiServicesAccountName
+
+  resource aiProject 'projects' existing = {
+    name: aiProjectName
+  }
+}
 
 // Bing Search resource for grounding capability
 resource bingCustomSearch 'Microsoft.Bing/accounts@2020-06-10' = {
@@ -30,24 +39,18 @@ resource bingCustomSearch 'Microsoft.Bing/accounts@2020-06-10' = {
 }
 
 // Role assignment to allow AI project to use Bing Search
-resource bingCustomSearchRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource bingCustomSearchRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   scope: bingCustomSearch
-  name: guid(subscription().id, resourceGroup().id, 'bing-search-role', aiAccountName)
+  name: guid(subscription().id, resourceGroup().id, 'bing-search-role', aiServicesAccountName, aiProjectName)
   properties: {
-    principalId: aiAccountPrincipalId
+    principalId: aiAccount::aiProject.identity.principalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908') // Cognitive Services User
   }
 }
 
-@description('AI Services account name for the project parent')
-param aiServicesAccountName string
-
-@description('AI project name for creating the connection')
-param aiProjectName string
-
 // Create the Bing Custom Search connection using the centralized connection module
-module bingCustomSearchConnection '../connection.bicep' = {
+module aiSearchConnection '../ai/connection.bicep' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   name: 'bing-custom-search-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName
@@ -72,7 +75,8 @@ module bingCustomSearchConnection '../connection.bicep' = {
   ]
 }
 
-output bingCustomSearchName string = bingCustomSearch.name
-output bingCustomSearchConnectionName string = bingCustomSearchConnection.outputs.connectionName
-output bingCustomSearchResourceId string = bingCustomSearch.id
-output bingCustomSearchConnectionId string = bingCustomSearchConnection.outputs.connectionId
+// Outputs
+output bingCustomGroundingName string = bingCustomSearch.name
+output bingCustomGroundingConnectionName string = aiSearchConnection.outputs.connectionName
+output bingCustomGroundingResourceId string = bingCustomSearch.id
+output bingCustomGroundingConnectionId string = aiSearchConnection.outputs.connectionId

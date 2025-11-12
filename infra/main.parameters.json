@@ -35,6 +35,9 @@
       "aiProjectDependentResourcesJson": {
         "value": "${AI_PROJECT_DEPENDENT_RESOURCES=[]}"
       },
+      "enableMonitoring": {
+        "value": "${ENABLE_MONITORING=true}"
+      },
       "enableHostedAgents": {
         "value": "${ENABLE_HOSTED_AGENTS=false}"
       }

@@ -28,6 +28,9 @@ param connections array = []
 @description('Also provision dependent resources and connect to the project')
 param additionalDependentResources dependentResourcesType
 
+@description('Enable monitoring via appinsights and log analytics')
+param enableMonitoring bool = true
+
 @description('Enable hosted agent deployment')
 param enableHostedAgents bool = false
 
@@ -47,6 +50,26 @@ var acrConnectionName = hasAcrConnection ? filter(additionalDependentResources, 
 var searchConnectionName = hasSearchConnection ? filter(additionalDependentResources, conn => conn.resource == 'azure_ai_search')[0].connectionName : ''
 var bingConnectionName = hasBingConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_grounding')[0].connectionName : ''
 var bingCustomConnectionName = hasBingCustomConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_custom_grounding')[0].connectionName : ''
+
+// Enable monitoring via Log Analytics and Application Insights
+module logAnalytics '../monitor/loganalytics.bicep' = if (enableMonitoring) {
+  name: 'logAnalytics'
+  params: {
+    location: location
+    tags: tags
+    name: 'logs-${resourceToken}'
+  }
+}
+
+module applicationInsights '../monitor/applicationinsights.bicep' = if (enableMonitoring) {
+  name: 'applicationInsights'
+  params: {
+    location: location
+    tags: tags
+    name: 'appi-${resourceToken}'
+    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+  }
+}
 
 // Always create a new AI Account for now (simplified approach)
 // TODO: Add support for existing accounts in a future version
@@ -109,7 +132,26 @@ resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/ca
 	}
 }
 
-// Create connections from ai.yaml configuration
+// Create connection towards appinsights
+resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
+  parent: aiAccount::project
+  name: 'appi-connection'
+  properties: {
+    category: 'AppInsights'
+    target: applicationInsights.outputs.id
+    authType: 'ApiKey'
+    isSharedToAll: true
+    credentials: {
+      key: applicationInsights.outputs.instrumentationKey
+    }
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: applicationInsights.outputs.id
+    }
+  }
+}
+
+// Create additional connections from ai.yaml configuration
 module aiConnections './connection.bicep' = [for (connection, index) in connections: {
   name: 'connection-${connection.name}'
   params: {
@@ -160,12 +202,12 @@ resource projectCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/rol
 // using the centralized ./connection.bicep module
 
 // Storage module - deploy if storage connection is defined in ai.yaml
-module storage './dependencies/storage.bicep' = if (hasStorageConnection) {
+module storage '../storage/storage.bicep' = if (hasStorageConnection) {
   name: 'storage'
   params: {
     location: location
     tags: tags
-    storageAccountName: 'st${resourceToken}'
+    resourceName: 'st${resourceToken}'
     connectionName: storageConnectionName
     principalId: principalId
     principalType: principalType
@@ -175,7 +217,7 @@ module storage './dependencies/storage.bicep' = if (hasStorageConnection) {
 }
 
 // Azure Container Registry module - deploy if ACR connection is defined in ai.yaml
-module acr './dependencies/acr.bicep' = if (hasAcrConnection) {
+module acr '../host/acr.bicep' = if (hasAcrConnection) {
   name: 'acr'
   params: {
     location: location
@@ -185,47 +227,41 @@ module acr './dependencies/acr.bicep' = if (hasAcrConnection) {
     principalId: principalId
     principalType: principalType
     aiServicesAccountName: aiAccount.name
-    aiServicesProjectName: aiAccount::project.name
     aiProjectName: aiAccount::project.name
   }
 }
 
 // Bing Search grounding module - deploy if Bing connection is defined in ai.yaml or parameter is enabled
-module bingGrounding './dependencies/bing_grounding.bicep' = if (hasBingConnection) {
+module bingGrounding '../search/bing_grounding.bicep' = if (hasBingConnection) {
   name: 'bing-grounding'
   params: {
     tags: tags
     resourceName: 'bing-${resourceToken}'
     connectionName: bingConnectionName
-    aiAccountPrincipalId: aiAccount.identity.principalId
-    aiAccountName: aiAccount.name
     aiServicesAccountName: aiAccount.name
     aiProjectName: aiAccount::project.name
   }
 }
 
 // Bing Custom Search grounding module - deploy if custom Bing connection is defined in ai.yaml or parameter is enabled
-module bingCustomGrounding './dependencies/bing_custom_grounding.bicep' = if (hasBingCustomConnection) {
+module bingCustomGrounding '../search/bing_custom_grounding.bicep' = if (hasBingCustomConnection) {
   name: 'bing-custom-grounding'
   params: {
     tags: tags
     resourceName: 'bingcustom-${resourceToken}'
     connectionName: bingCustomConnectionName
-    aiAccountPrincipalId: aiAccount.identity.principalId
-    aiAccountName: aiAccount.name
     aiServicesAccountName: aiAccount.name
     aiProjectName: aiAccount::project.name
   }
 }
 
 // Azure AI Search module - deploy if search connection is defined in ai.yaml
-module azureAiSearch './dependencies/azure_ai_search.bicep' = if (hasSearchConnection) {
+module azureAiSearch '../search/azure_ai_search.bicep' = if (hasSearchConnection) {
   name: 'azure-ai-search'
   params: {
     tags: tags
-    azureSearchResourceName: 'search-${resourceToken}'
+    resourceName: 'search-${resourceToken}'
     connectionName: searchConnectionName
-    aiAccountPrincipalId: aiAccount.identity.principalId
     storageAccountResourceId: hasStorageConnection ? storage!.outputs.storageAccountId : ''
     containerName: 'knowledge'
     aiServicesAccountName: aiAccount.name
@@ -246,6 +282,7 @@ output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
 output aiServicesPrincipalId string = aiAccount.identity.principalId
 output projectName string = aiAccount::project.name
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
 
 // Grouped dependent resources outputs
 output dependentResources object = {
@@ -255,14 +292,14 @@ output dependentResources object = {
     connectionName: hasAcrConnection ? acr!.outputs.containerRegistryConnectionName : ''
   }
   bing_grounding: {
-    name: (hasBingConnection) ? bingGrounding!.outputs.bingSearchName : ''
-    connectionName: (hasBingConnection) ? bingGrounding!.outputs.bingSearchConnectionName : ''
-    connectionId: (hasBingConnection) ? bingGrounding!.outputs.bingSearchConnectionId : ''
+    name: (hasBingConnection) ? bingGrounding!.outputs.bingGroundingName : ''
+    connectionName: (hasBingConnection) ? bingGrounding!.outputs.bingGroundingConnectionName : ''
+    connectionId: (hasBingConnection) ? bingGrounding!.outputs.bingGroundingConnectionId : ''
   }
   bing_custom_grounding: {
-    name: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchName : ''
-    connectionName: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionName : ''
-    connectionId: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomSearchConnectionId : ''
+    name: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomGroundingName : ''
+    connectionName: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomGroundingConnectionName : ''
+    connectionId: (hasBingCustomConnection) ? bingCustomGrounding!.outputs.bingCustomGroundingConnectionId : ''
   }
   search: {
     serviceName: hasSearchConnection ? azureAiSearch!.outputs.searchServiceName : ''

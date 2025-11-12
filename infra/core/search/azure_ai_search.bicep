@@ -4,7 +4,7 @@ targetScope = 'resourceGroup'
 param tags object = {}
 
 @description('Azure Search resource name')
-param azureSearchResourceName string
+param resourceName string
 
 @description('Azure Search SKU name')
 param azureSearchSkuName string = 'basic'
@@ -15,14 +15,11 @@ param storageAccountResourceId string
 @description('container name')
 param containerName string = 'knowledgebase'
 
-@description('AI Services account managed identity principal ID')
-param aiAccountPrincipalId string
-
 @description('AI Services account name for the project parent')
-param aiServicesAccountName string
+param aiServicesAccountName string = ''
 
 @description('AI project name for creating the connection')
-param aiProjectName string
+param aiProjectName string = ''
 
 @description('Id of the user or app to assign application roles')
 param principalId string
@@ -36,9 +33,18 @@ param connectionName string = 'azure-ai-search-connection'
 @description('Location for all resources')
 param location string = resourceGroup().location
 
+// Get reference to the AI Services account and project to access their managed identities
+resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
+  name: aiServicesAccountName
+
+  resource aiProject 'projects' existing = {
+    name: aiProjectName
+  }
+}
+
 // Azure Search Service
 resource searchService 'Microsoft.Search/searchServices@2024-06-01-preview' = {
-  name: azureSearchResourceName
+  name: resourceName
   location: location
   tags: tags
   sku: {
@@ -99,7 +105,7 @@ resource searchToStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@
 }
 
 // Search needs OpenAI access (AI Services account)
-resource searchToAIServicesRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource searchToAIServicesRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(aiServicesAccountName)) {
   name: guid(aiServicesAccountName, searchService.id, 'Cognitive Services OpenAI User', uniqueString(deployment().name))
   properties: {
     // GOOD
@@ -109,26 +115,26 @@ resource searchToAIServicesRoleAssignment 'Microsoft.Authorization/roleAssignmen
   }
 }
 
-// AI Services needs Search access - Service Contributor
-resource aiServicesToSearchServiceRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, aiAccountPrincipalId, 'Search Service Contributor', uniqueString(deployment().name))
+// AI Project needs Search access - Service Contributor
+resource aiServicesToSearchServiceRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
+  name: guid(searchService.id, aiServicesAccountName, aiProjectName, 'Search Service Contributor', uniqueString(deployment().name))
   scope: searchService
   properties: {
     // GOOD
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0') // Search Service Contributor
-    principalId: aiAccountPrincipalId
+    principalId: aiAccount::aiProject.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
-// AI Services needs Search access - Index Data Contributor
-resource aiServicesToSearchDataRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, aiAccountPrincipalId, 'Search Index Data Contributor', uniqueString(deployment().name))
+// AI Project needs Search access - Index Data Contributor
+resource aiServicesToSearchDataRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
+  name: guid(searchService.id, aiServicesAccountName, aiProjectName, 'Search Index Data Contributor', uniqueString(deployment().name))
   scope: searchService
   properties: {
     // GOOD
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7') // Search Index Data Contributor
-    principalId: aiAccountPrincipalId
+    principalId: aiAccount::aiProject.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -167,17 +173,8 @@ resource userToSearchRoleAssignment 'Microsoft.Authorization/roleAssignments@202
 //   }
 // }
 
-// Get reference to the AI Services account and project
-resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
-  name: aiServicesAccountName
-
-  resource project 'projects' existing = {
-    name: aiProjectName
-  }
-}
-
 // Create the AI Search connection using the centralized connection module
-module aiSearchConnection '../connection.bicep' = {
+module aiSearchConnection '../ai/connection.bicep' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   name: 'ai-search-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName
@@ -209,5 +206,5 @@ output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output containerName string = storageContainer.name
 output storageAccountPrincipalId string = storageAccount.identity.principalId
-output searchConnectionName string = aiSearchConnection.outputs.connectionName
-output searchConnectionId string = aiSearchConnection.outputs.connectionId
+output searchConnectionName string = (!empty(aiServicesAccountName) && !empty(aiProjectName)) ? aiSearchConnection!.outputs.connectionName : ''
+output searchConnectionId string = (!empty(aiServicesAccountName) && !empty(aiProjectName)) ? aiSearchConnection!.outputs.connectionId : ''
