@@ -7,10 +7,7 @@ param location string = resourceGroup().location
 param tags object = {}
 
 @description('Storage account resource name')
-param storageAccountName string
-
-@description('AI Services account name to get managed identity')
-param aiServicesAccountName string
+param resourceName string
 
 @description('Id of the user or app to assign application roles')
 param principalId string
@@ -18,12 +15,18 @@ param principalId string
 @description('Principal type of user or app')
 param principalType string
 
+@description('AI Services account name for the project parent')
+param aiServicesAccountName string = ''
+
+@description('AI project name for creating the connection')
+param aiProjectName string = ''
+
 @description('Name for the AI Foundry storage connection')
-param connectionName string = storageAccountName
+param connectionName string = 'storage-connection'
 
 // Storage Account for the AI Services account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: storageAccountName
+  name: resourceName
   location: location
   tags: tags
   sku: {
@@ -52,18 +55,22 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 }
 
-// Get reference to the AI Services account for role assignments
-resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
+// Get reference to the AI Services account and project to access their managed identities
+resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   name: aiServicesAccountName
+
+  resource aiProject 'projects' existing = {
+    name: aiProjectName
+  }
 }
 
 // Role assignment for AI Services to access the storage account
-resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   name: guid(storageAccount.id, aiAccount.id, 'ai-storage-contributor')
   scope: storageAccount
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
-    principalId: aiAccount.identity.principalId
+    principalId: aiAccount::aiProject.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -79,12 +86,8 @@ resource userStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022
   }
 }
 
-// Outputs
-@description('AI project name for creating the connection')
-param aiProjectName string
-
 // Create the storage connection using the centralized connection module
-module storageConnection '../connection.bicep' = {
+module storageConnection '../ai/connection.bicep' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   name: 'storage-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName

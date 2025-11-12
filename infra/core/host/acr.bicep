@@ -6,33 +6,34 @@ param location string = resourceGroup().location
 @description('Tags that will be applied to all resources')
 param tags object = {}
 
+@description('Resource name for the container registry')
+param resourceName string
+
 @description('Id of the user or app to assign application roles')
 param principalId string
 
 @description('Principal type of user or app')
 param principalType string
 
-@description('AI Services account name to get managed identity')
-param aiServicesAccountName string
+@description('AI Services account name for the project parent')
+param aiServicesAccountName string = ''
 
 @description('AI project name for creating the connection')
-param aiServicesProjectName string
-
-@description('Resource name for the container registry')
-param resourceName string
+param aiProjectName string = ''
 
 @description('Name for the AI Foundry ACR connection')
 param connectionName string = 'acr-connection'
 
 // Get reference to the AI Services account and project to access their managed identities
-resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
+resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   name: aiServicesAccountName
 
   resource aiProject 'projects' existing = {
-    name: aiServicesProjectName
+    name: aiProjectName
   }
 }
 
+// Create the Container Registry
 module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' = {
   name: 'registry'
   params: {
@@ -46,6 +47,7 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
         principalType: principalType
         roleDefinitionIdOrName: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
       }
+      // TODO SEPARATELY
       {
         // the foundry project itself can pull from the ACR
         principalId: aiAccount::aiProject.identity.principalId
@@ -56,11 +58,8 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
   }
 }
 
-@description('AI project name for creating the connection')
-param aiProjectName string
-
 // Create the ACR connection using the centralized connection module
-module acrConnection '../connection.bicep' = {
+module acrConnection '../ai/connection.bicep' = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
   name: 'acr-connection-creation'
   params: {
     aiServicesAccountName: aiServicesAccountName
