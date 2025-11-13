@@ -101,8 +101,8 @@ module aiProject 'core/ai/ai-project.bicep' = {
 
 // Resources
 output AZURE_RESOURCE_GROUP string = resourceGroupName
-output AI_FOUNDRY_RESOURCE_ID string = '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/${aiProject.outputs.aiServicesAccountName}'
-output AI_FOUNDRY_PROJECT_RESOURCE_ID string = aiProject.outputs.projectId
+output AZURE_AI_ACCOUNT_ID string = aiProject.outputs.accountId
+output AZURE_AI_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_AI_ACCOUNT_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
@@ -135,3 +135,4 @@ output AZURE_AI_SEARCH_SERVICE_NAME string = aiProject.outputs.dependentResource
 // Azure Storage
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResources.storage.connectionName
 output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.dependentResources.storage.accountName
+
