@@ -9,4 +9,3 @@ requiredVersions:
   extensions:
     # the azd ai agent extension is required for this template
     "azure.ai.agents": ">=0.0.6"
-
