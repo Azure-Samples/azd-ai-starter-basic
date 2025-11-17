@@ -7,7 +7,7 @@ param tags object = {}
 param resourceName string
 
 @description('Azure Search SKU name')
-param azureSearchSkuName string = 'free'
+param azureSearchSkuName string = 'basic'
 
 @description('Azure storage account resource ID')
 param storageAccountResourceId string
@@ -208,3 +208,4 @@ output containerName string = storageContainer.name
 output storageAccountPrincipalId string = storageAccount.identity.principalId
 output searchConnectionName string = (!empty(aiServicesAccountName) && !empty(aiProjectName)) ? aiSearchConnection!.outputs.connectionName : ''
 output searchConnectionId string = (!empty(aiServicesAccountName) && !empty(aiProjectName)) ? aiSearchConnection!.outputs.connectionId : ''
+
