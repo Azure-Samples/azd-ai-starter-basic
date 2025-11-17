@@ -1,20 +1,14 @@
-# Azure AI Foundry `azd` starter kit (basic)
-
-> **⚠️ Experimental Repository Notice**  
-> This repository contains experimental code and configurations provided by Microsoft for demonstration and learning purposes only. It is not intended for production use and should not be deployed in production environments. Use at your own risk and discretion. The content, APIs, and functionality may change or break without notice.
-
-<!-- WIP
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](placeholder)
-[![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](placeholder)
--->
+# Azure AI Foundry `azd` bicep starter kit (basic)
 
 This Azure Developer CLI (azd) template provides a streamlined way to provision and deploy Azure AI Foundry resources for building and running AI agents. It includes infrastructure-as-code definitions and sample application code to help you quickly get started with Azure AI Foundry's agent capabilities, including model deployments, workspace configuration, and supporting services like storage and container hosting.
 
+This template does **not** include agent code or application code. You will find samples in other repositories such as [azure-ai-foundry/foundry-samples](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/microsoft/python/getting-started-agents/hosted-agents).
+
 [Features](#features) • [Getting Started](#getting-started) • [Guidance](#guidance)
 
-## Important Security Notice
+This template, the application code and configuration it contains, has been built to showcase Microsoft Azure specific services and tools. We strongly advise our customers not to make this code part of their production environments without implementing or enabling additional security features.
 
-This template, the application code and configuration it contains, has been built to showcase Microsoft Azure specific services and tools. We strongly advise our customers not to make this code part of their production environments without implementing or enabling additional security features.  
+With any AI solutions you create using these templates, you are responsible for assessing all associated risks, and for complying with all applicable laws and safety standards. Learn more in the transparency documents for [Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/responsible-ai/agents/transparency-note) and [Agent Framework](https://github.com/microsoft/agent-framework/blob/main/TRANSPARENCY_FAQ.md).
 
 ## Features
 
@@ -22,89 +16,49 @@ This project framework provides the following features:
 
 * **Azure AI Foundry Project**: Complete setup of Azure AI Foundry workspace with project configuration
 * **Foundry Model Deployments**: Automatic deployment of AI models for agent capabilities
-* **Container-Based Agent Hosting**: Azure Container Apps environment for deploying and scaling AI agents
-* **Azure Container Registry**: Secure container image storage and management for agent deployments
-* **Storage**: Azure Storage Account with proper role-based access control for data and file management
-* **Managed Identity**: Built-in Azure Managed Identity for secure, keyless authentication between services
-* **Infrastructure as Code**: Complete Bicep templates for repeatable, version-controlled deployments
+* **Azure Container Registry**: Container image storage and management for agent deployments
+* **Managed Identity**: Built-in Azure Managed Identity for keyless authentication between services
 
 ### Architecture Diagram
 
+This starter kit will provision the bare minimum for your hosted agent to work (if `ENABLE_HOSTED_AGENTS=true`).
+
+| Resource | Description |
+|----------|-------------|
+| [Azure AI Foundry](https://learn.microsoft.com/azure/ai-foundry) | Provides a collaborative workspace for AI development with access to models, data, and compute resources |
+| [Azure Container Registry](https://learn.microsoft.com/azure/container-registry/) | Stores and manages container images for secure deployment |
+| [Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) | *Optional* - Provides application performance monitoring, logging, and telemetry for debugging and optimization |
+| [Log Analytics Workspace](https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-workspace-overview) | *Optional* - Collects and analyzes telemetry data for monitoring and troubleshooting |
+
+Those resources will be used by the [`azd ai agent` extension](https://aka.ms/azdaiagent/docs) when building and deploying agents:
+
 ```mermaid
-graph TB
-    User[👤 User] --> AIF[AI Agent Runtime]
-    
-    subgraph "Azure Resource Group"
-        subgraph "AI Foundry Workspace"
-            AIF[Azure AI Foundry<br/>Project]
-            AIS[Azure AI Services Resource]
-            Models[Model Deployments]
-        end
-        
-        subgraph "Container Infrastructure (Optional)"
-            ACR[Azure Container Registry<br/>Agent Images]
-            ACAE[Container Apps Environment]
-            ACA
-        end
-        
-        subgraph "Storage & Search (Optional)"
-            Storage[Azure Storage Account<br/>Data & Files]
-            Search[Azure AI Search<br/>Knowledge Base]
-            Bing[Bing Search API<br/>Web Grounding]
-        end
-        
-        subgraph "Security & Identity"
-            MI[Managed Identity<br/>Keyless Auth]
-            RBAC[Role-Based Access Control]
-        end
-    end
-    
-    %% Connections
-    ACA --> AIF
-    ACA --> Models
-    AIF --> AIS
-    AIF --> Storage
-    AIF --> Search
-    AIF --> Bing
-    ACA --> ACR
-    ACA --> MI
-    MI --> RBAC
-    
-    %% Styling
-    classDef primary fill:#0078d4,stroke:#005a9e,stroke-width:2px,color:#fff
-    classDef secondary fill:#00bcf2,stroke:#0099bc,stroke-width:2px,color:#fff
-    classDef optional fill:#f2f2f2,stroke:#666,stroke-width:1px,color:#333
-    classDef external fill:#ffd23f,stroke:#cc9900,stroke-width:2px,color:#333
-    
-    class AIF,AIS,Models primary
-    class ACA,ACR,ACAE secondary
-    class Storage,Search,Bing optional
+work in progress
 ```
 
-This architecture shows how the Azure AI Foundry starter template creates a complete environment for AI agent development and deployment, with optional components that can be enabled based on your needs.
+The template is parametrized so that it can be configured with additional resources depending on the agent requirements:
+
+* deploy AI models by setting `AI_PROJECT_DEPLOYMENTS` with a list of model deployment configs,
+* provision additional resources (Azure AI Search, Bing Search) by setting `AI_PROJECT_DEPENDENT_RESOURCES`,
+* enable monitoring by setting `ENABLE_MONITORING=true` (default on),
+* provision connections by setting `AI_PROJECT_CONNECTIONS` with a list of connection configs.
 
 ## Getting Started
 
-### GitHub Codespaces
+Note: this repository is not meant to be cloned, but to be consumed as a template in your own project:
 
-> 🚧 **Work in Progress** - GitHub Codespaces setup is currently being developed and will be available soon.
+```bash
+azd init --template Azure-Samples/ai-foundry-starter-basic
+```
 
-### VS Code Dev Containers
-
-> 🚧 **Work in Progress** - VS Code Dev Containers configuration is currently being developed and will be available soon.
-
-### Local Environment
-
-Note: this repository is not meant to be cloned, but to be consumed as a template in your own project.
-
-#### Prerequisites
+### Prerequisites
 
 * Install [azd](https://aka.ms/install-azd)
   * Windows: `winget install microsoft.azd`
   * Linux: `curl -fsSL https://aka.ms/install-azd.sh | bash`
   * MacOS: `brew tap azure/azd && brew install azd`
 
-#### Quickstart
+### Quickstart
 
 1. Bring down the template code:
 
@@ -117,7 +71,7 @@ Note: this repository is not meant to be cloned, but to be consumed as a templat
 2. Sign into your Azure account:
 
     ```shell
-     azd auth login
+    azd auth login
     ```
 
 3. Add an agent... 🚧 **Work in Progress**
@@ -155,6 +109,14 @@ The majority of the Azure resources used in this infrastructure are on usage-bas
 
 You can try the [Azure pricing calculator](https://azure.microsoft.com/pricing/calculator) for the resources deployed in this template.
 
+* **Azure AI Foundry**: Free tier. [Pricing](https://azure.microsoft.com/pricing/details/ai-studio/)
+* **Azure AI Services**: S0 tier, defaults to gpt-4o-mini. Pricing is based on token count. [Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/)
+* **Azure Container Registry**: Basic SKU. Price is per day and on storage. [Pricing](https://azure.microsoft.com/en-us/pricing/details/container-registry/)
+* **Azure Storage Account**: Standard tier, LRS. Pricing is based on storage and operations. [Pricing](https://azure.microsoft.com/pricing/details/storage/blobs/)
+* **Log analytics**: Pay-as-you-go tier. Costs based on data ingested. [Pricing](https://azure.microsoft.com/pricing/details/monitor/)
+* **Azure AI Search**: Free tier, LRS. Price is per day and based on transactions. [Pricing](https://azure.microsoft.com/en-us/pricing/details/search/)
+* **Grounding with Bing Search**: G1 tier. Costs based on transactions. [Pricing](https://www.microsoft.com/en-us/bing/apis/grounding-pricing)
+
 ⚠️ To avoid unnecessary costs, remember to take down your app if it's no longer in use, either by deleting the resource group in the Portal or running `azd down`.
 
 ### Security guidelines
@@ -172,21 +134,7 @@ You may want to consider additional security measures, such as:
 This template, the application code and configuration it contains, has been built to showcase Microsoft Azure specific services and tools. We strongly advise our customers not to make this code part of their production environments without implementing or enabling additional security features.  <br/><br/>
 For a more comprehensive list of best practices and security recommendations for Intelligent Applications, [visit our official documentation](https://learn.microsoft.com/en-us/azure/ai-foundry/).
 
-### Resources
-
-This template creates everything you need to get started with Azure AI Foundry:
-
-| Resource | Description |
-|----------|-------------|
-| [Azure AI Foundry](https://learn.microsoft.com/azure/ai-foundry) | Provides a collaborative workspace for AI development with access to models, data, and compute resources |
-| [Azure Container Apps](https://learn.microsoft.com/azure/container-apps/) | Hosts and scales the web application with serverless containers |
-| [Azure Container Registry](https://learn.microsoft.com/azure/container-registry/) | Stores and manages container images for secure deployment |
-| [Storage Account](https://learn.microsoft.com/azure/storage/blobs/) | Provides blob storage for application data and file uploads |
-| [AI Search Service](https://learn.microsoft.com/azure/search/) | *Optional* - Enables hybrid search capabilities combining semantic and vector search |
-| [Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) | *Optional* - Provides application performance monitoring, logging, and telemetry for debugging and optimization |
-| [Log Analytics Workspace](https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-workspace-overview) | *Optional* - Collects and analyzes telemetry data for monitoring and troubleshooting |
-
-## Disclaimers
+## Additional Disclaimers
 
 **Trademarks** This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft’s Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
 
