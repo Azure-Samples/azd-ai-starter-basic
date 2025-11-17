@@ -7,7 +7,7 @@ param tags object = {}
 param resourceName string
 
 @description('Azure Search SKU name')
-param azureSearchSkuName string = 'basic'
+param azureSearchSkuName string = 'free'
 
 @description('Azure storage account resource ID')
 param storageAccountResourceId string
