@@ -208,3 +208,4 @@ output containerName string = storageContainer.name
 output storageAccountPrincipalId string = storageAccount.identity.principalId
 output searchConnectionName string = (!empty(aiServicesAccountName) && !empty(aiProjectName)) ? aiSearchConnection!.outputs.connectionName : ''
 output searchConnectionId string = (!empty(aiServicesAccountName) && !empty(aiProjectName)) ? aiSearchConnection!.outputs.connectionId : ''
+
