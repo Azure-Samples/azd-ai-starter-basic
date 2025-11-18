@@ -1,8 +1,8 @@
-# Azure AI Foundry `azd` bicep starter kit (basic)
+# Microsoft Foundry `azd` bicep starter kit (basic)
 
-This Azure Developer CLI (azd) template provides a streamlined way to provision and deploy Azure AI Foundry resources for building and running AI agents. It includes infrastructure-as-code definitions and sample application code to help you quickly get started with Azure AI Foundry's agent capabilities, including model deployments, workspace configuration, and supporting services like storage and container hosting.
+This Azure Developer CLI (azd) template provides a streamlined way to provision and deploy Microsoft Foundry resources for building and running AI agents. It includes infrastructure-as-code definitions and sample application code to help you quickly get started with Microsoft Foundry's agent capabilities, including model deployments, workspace configuration, and supporting services like storage and container hosting.
 
-This template does **not** include agent code or application code. You will find samples in other repositories such as [azure-ai-foundry/foundry-samples](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/microsoft/python/getting-started-agents/hosted-agents).
+This template does **not** include agent code or application code. You will find samples in other repositories such as [foundry-samples](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/microsoft/python/getting-started-agents/hosted-agents).
 
 [Features](#features) • [Getting Started](#getting-started) • [Guidance](#guidance)
 
@@ -14,7 +14,7 @@ With any AI solutions you create using these templates, you are responsible 
 
 This project framework provides the following features:
 
-* **Azure AI Foundry Project**: Complete setup of Azure AI Foundry workspace with project configuration
+* **Microsoft Foundry Project**: Complete setup of Microsoft Foundry workspace with project configuration
 * **Foundry Model Deployments**: Automatic deployment of AI models for agent capabilities
 * **Azure Container Registry**: Container image storage and management for agent deployments
 * **Managed Identity**: Built-in Azure Managed Identity for keyless authentication between services
@@ -25,7 +25,7 @@ This starter kit will provision the bare minimum for your hosted agent to work (
 
 | Resource | Description |
 |----------|-------------|
-| [Azure AI Foundry](https://learn.microsoft.com/azure/ai-foundry) | Provides a collaborative workspace for AI development with access to models, data, and compute resources |
+| [Microsoft Foundry](https://learn.microsoft.com/azure/ai-foundry) | Provides a collaborative workspace for AI development with access to models, data, and compute resources |
 | [Azure Container Registry](https://learn.microsoft.com/azure/container-registry/) | Stores and manages container images for secure deployment |
 | [Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) | *Optional* - Provides application performance monitoring, logging, and telemetry for debugging and optimization |
 | [Log Analytics Workspace](https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-workspace-overview) | *Optional* - Collects and analyzes telemetry data for monitoring and troubleshooting |
@@ -33,7 +33,33 @@ This starter kit will provision the bare minimum for your hosted agent to work (
 Those resources will be used by the [`azd ai agent` extension](https://aka.ms/azdaiagent/docs) when building and deploying agents:
 
 ```mermaid
-work in progress
+graph TB
+    Dev[👤 Agent Developer]
+    Dev -->|1. build agent<br/>container code| ACR
+    Dev -->|2. deploy agent| AIFP
+    Dev -->|4. query agent| AIFP
+
+    subgraph "Azure Resource Group"
+        subgraph "Azure AI Foundry Account"
+            AIFP[Azure AI Foundry<br/>Project]
+            Models[Model Deployments]
+        end
+        
+        subgraph ACR[Azure Container Registry]
+            ACC[Agent code container]
+        end
+    end
+    
+    %% Connections
+    AIFP --> Models
+    ACR -->|3. AcrPull| AIFP
+    
+    %% Styling
+    classDef primary fill:#0078d4,stroke:#005a9e,stroke-width:2px,color:#fff
+    classDef secondary fill:#00bcf2,stroke:#0099bc,stroke-width:2px,color:#fff
+    
+    class AIFP,Models primary
+    class ACR secondary
 ```
 
 The template is parametrized so that it can be configured with additional resources depending on the agent requirements:
@@ -74,13 +100,19 @@ azd init --template Azure-Samples/ai-foundry-starter-basic
     azd auth login
     ```
 
-3. Add an agent... 🚧 **Work in Progress**
+3. Download a sample agent from GitHub:
+
+    ```shell
+    azd ai agent init -m <repo-path-to-agent.yaml>
+    ```
+
+You'll find agent samples in the [`foundry-samples` repo](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/microsoft/python/getting-started-agents/hosted-agents).
 
 ## Guidance
 
 ### Region Availability
 
-This template does not use specific models. The model deployments are a parameter of the template. Each model may not be available in all Azure regions. Check for [up-to-date region availability of Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/reference/region-support) and in particular the [Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/concepts/model-region-support?tabs=global-standard).
+This template does not use specific models. The model deployments are a parameter of the template. Each model may not be available in all Azure regions. Check for [up-to-date region availability of Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/reference/region-support) and in particular the [Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/concepts/model-region-support?tabs=global-standard).
 
 ## Resource Clean-up
 
@@ -109,7 +141,7 @@ The majority of the Azure resources used in this infrastructure are on usage-bas
 
 You can try the [Azure pricing calculator](https://azure.microsoft.com/pricing/calculator) for the resources deployed in this template.
 
-* **Azure AI Foundry**: Free tier. [Pricing](https://azure.microsoft.com/pricing/details/ai-studio/)
+* **Microsoft Foundry**: Standard tier. [Pricing](https://azure.microsoft.com/pricing/details/ai-foundry/)
 * **Azure AI Services**: S0 tier, defaults to gpt-4o-mini. Pricing is based on token count. [Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/)
 * **Azure Container Registry**: Basic SKU. Price is per day and on storage. [Pricing](https://azure.microsoft.com/en-us/pricing/details/container-registry/)
 * **Azure Storage Account**: Standard tier, LRS. Pricing is based on storage and operations. [Pricing](https://azure.microsoft.com/pricing/details/storage/blobs/)
