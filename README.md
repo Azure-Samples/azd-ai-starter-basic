@@ -74,7 +74,13 @@ azd init --template Azure-Samples/ai-foundry-starter-basic
     azd auth login
     ```
 
-3. Add an agent... 🚧 **Work in Progress**
+3. Download a sample agent from GitHub:
+
+    ```shell
+    azd ai agent init -m <repo-path-to-agent.yaml>
+    ```
+
+You'll find agent samples in the [`foundry-samples` repo](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/microsoft/python/getting-started-agents/hosted-agents).
 
 ## Guidance
 
