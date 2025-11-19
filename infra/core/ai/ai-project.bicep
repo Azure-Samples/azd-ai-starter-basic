@@ -129,6 +129,7 @@ resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/ca
 	parent: aiAccount
 	properties: {
 		capabilityHostKind: 'Agents'
+    enablePublicAgentEnvironment: true
 	}
 }
 
