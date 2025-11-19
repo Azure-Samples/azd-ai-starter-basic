@@ -124,7 +124,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
 
 }
 
-resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/capabilityHosts@2025-10-01-preview' = if (enableHostedAgents) {
+resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/capabilityHosts@2025-06-01' = if (enableHostedAgents) {
 	name: 'agents'
 	parent: aiAccount
 	properties: {
@@ -348,4 +348,3 @@ type dependentResourcesType = {
   @description('The connection name for this resource')
   connectionName: string
 }[]
-
