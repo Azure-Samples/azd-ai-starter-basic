@@ -122,18 +122,17 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
     ]
   }
 
+  resource aiFoundryAccountCapabilityHost 'capabilityHosts@2025-10-01-preview' = if (enableHostedAgents) {
+    name: 'agents'
+    properties: {
+      capabilityHostKind: 'Agents'
+      // IMPORTANT: this is required to enable hosted agents deployment
+      // if no BYO Net is provided
+      enablePublicHostingEnvironment: true
+    }
+  }
 }
 
-resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/capabilityHosts@2025-06-01' = if (enableHostedAgents) {
-	name: 'agents'
-	parent: aiAccount
-	properties: {
-		capabilityHostKind: 'Agents'
-    // IMPORTANT: this is required to enable hosted agents deployment
-    // if no BYO Net is provided
-    enablePublicHostingEnvironment: true
-	}
-}
 
 // Create connection towards appinsights
 resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = {
