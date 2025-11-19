@@ -2,7 +2,7 @@
 
 This Azure Developer CLI (azd) template provides a streamlined way to provision and deploy Microsoft Foundry resources for building and running AI agents. It includes infrastructure-as-code definitions and sample application code to help you quickly get started with Microsoft Foundry's agent capabilities, including model deployments, workspace configuration, and supporting services like storage and container hosting.
 
-This template does **not** include agent code or application code. You will find samples in other repositories such as [foundry-samples](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/microsoft/python/getting-started-agents/hosted-agents).
+This template does **not** include agent code or application code. You will find samples in other repositories such as [foundry-samples](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/microsoft/hosted-agents)
 
 [Features](#features) • [Getting Started](#getting-started) • [Guidance](#guidance)
 
