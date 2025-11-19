@@ -131,7 +131,7 @@ resource aiFoundryAccountCapabilityHost 'Microsoft.CognitiveServices/accounts/ca
 		capabilityHostKind: 'Agents'
     // IMPORTANT: this is required to enable hosted agents deployment
     // if no BYO Net is provided
-    enablePublicAgentEnvironment: true
+    enablePublicHostingEnvironment: true
 	}
 }
 
