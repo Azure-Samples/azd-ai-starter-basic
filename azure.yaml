@@ -20,9 +20,11 @@ hooks:
         windows:
             shell: pwsh
             run: ./scripts/create_capability_host.ps1
+            interactive: true
         posix:
             shell: sh
             run: ./scripts/create_capability_host.sh
+            interactive: true
 
 # Recommended extensions for this project
 requiredVersions:
