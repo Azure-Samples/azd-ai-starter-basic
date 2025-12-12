@@ -79,7 +79,7 @@ var aiProjectConnections = json(aiProjectConnectionsJson)
 var aiProjectDependentResources = json(aiProjectDependentResourcesJson)
 
 @description('Enable hosted agent deployment')
-param enableHostedAgents bool = true
+param enableHostedAgents bool = false
 
 @description('Enable monitoring for the AI project')
 param enableMonitoring bool = true
