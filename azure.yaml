@@ -23,7 +23,7 @@ hooks:
             interactive: true
         posix:
             shell: sh
-            run: ./scripts/create_capability_host.sh
+            run: sh ./scripts/create_capability_host.sh
             interactive: true
 
 # Recommended extensions for this project
