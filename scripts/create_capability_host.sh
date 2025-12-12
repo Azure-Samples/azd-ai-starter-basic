@@ -89,16 +89,52 @@ RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
 echo "HTTP Status: $HTTP_STATUS"
 
 if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "201" ]; then
-    echo "✓ Successfully created capability host '$CAPABILITY_HOST_NAME'"
-    echo "Response:"
-    echo "$RESPONSE_BODY" | jq '.' 2>/dev/null || echo "$RESPONSE_BODY"
+    echo "✓ Capability host creation request submitted"
     
-    # Check provisioning state
+    # Poll for provisioning completion
     PROVISIONING_STATE=$(echo "$RESPONSE_BODY" | jq -r '.properties.provisioningState' 2>/dev/null)
-    if [ "$PROVISIONING_STATE" = "Creating" ] || [ "$PROVISIONING_STATE" = "Updating" ]; then
-        echo ""
-        echo "⚠ Capability host is being provisioned (state: $PROVISIONING_STATE)"
-        echo "This may take a few minutes. Check the Azure portal for status."
+    MAX_ATTEMPTS=60  # 5 minutes max (5 second intervals)
+    ATTEMPT=0
+    
+    while [ "$PROVISIONING_STATE" = "Creating" ] || [ "$PROVISIONING_STATE" = "Updating" ]; do
+        if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+            echo "⚠ Timeout waiting for provisioning to complete (state: $PROVISIONING_STATE)"
+            echo "Check the Azure portal for status."
+            break
+        fi
+        
+        ATTEMPT=$((ATTEMPT + 1))
+        echo "Waiting for provisioning to complete (state: $PROVISIONING_STATE, attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+        sleep 5
+        
+        # Check current status
+        STATUS_RESPONSE=$(curl -s \
+            -X GET \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${URL}")
+        
+        PROVISIONING_STATE=$(echo "$STATUS_RESPONSE" | jq -r '.properties.provisioningState' 2>/dev/null)
+        
+        if [ -z "$PROVISIONING_STATE" ] || [ "$PROVISIONING_STATE" = "null" ]; then
+            echo "⚠ Failed to check provisioning status"
+            break
+        fi
+    done
+    
+    # Check final state
+    if [ "$PROVISIONING_STATE" = "Succeeded" ]; then
+        echo "✓ Successfully created capability host '$CAPABILITY_HOST_NAME'"
+        echo "Provisioning state: $PROVISIONING_STATE"
+    elif [ "$PROVISIONING_STATE" = "Failed" ]; then
+        echo "✗ Capability host provisioning failed"
+        exit 1
+    elif [ "$PROVISIONING_STATE" = "Canceled" ]; then
+        echo "✗ Capability host provisioning was canceled"
+        exit 1
+    else
+        echo "⚠ Capability host is still provisioning (state: $PROVISIONING_STATE)"
+        echo "Check the Azure portal for status."
     fi
 else
     echo "✗ Failed to create capability host"

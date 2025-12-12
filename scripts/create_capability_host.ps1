@@ -90,16 +90,44 @@ Write-Host "URL: $url" -ForegroundColor Gray
 try {
     $response = Invoke-RestMethod -Uri $url -Method Put -Headers $headers -Body $requestBody
     
-    Write-Host "✓ Successfully created capability host '$capabilityHostName'" -ForegroundColor Green
-    Write-Host "Response:" -ForegroundColor Gray
-    $response | ConvertTo-Json -Depth 10 | Write-Host
+    Write-Host "✓ Capability host creation request submitted" -ForegroundColor Green
     
-    # Check provisioning state
+    # Poll for provisioning completion
     $provisioningState = $response.properties.provisioningState
-    if ($provisioningState -in @("Creating", "Updating")) {
-        Write-Host ""
-        Write-Warning "Capability host is being provisioned (state: $provisioningState)"
-        Write-Host "This may take a few minutes. Check the Azure portal for status." -ForegroundColor Yellow
+    $maxAttempts = 60  # 5 minutes max (5 second intervals)
+    $attempt = 0
+    
+    while ($provisioningState -in @("Creating", "Updating") -and $attempt -lt $maxAttempts) {
+        $attempt++
+        Write-Host "Waiting for provisioning to complete (state: $provisioningState, attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 5
+        
+        try {
+            $statusResponse = Invoke-RestMethod -Uri $url -Method Get -Headers $headers
+            $provisioningState = $statusResponse.properties.provisioningState
+        }
+        catch {
+            Write-Warning "Failed to check status: $_"
+            break
+        }
+    }
+    
+    # Check final state
+    if ($provisioningState -eq "Succeeded") {
+        Write-Host "✓ Successfully created capability host '$capabilityHostName'" -ForegroundColor Green
+        Write-Host "Provisioning state: $provisioningState" -ForegroundColor Green
+    }
+    elseif ($provisioningState -eq "Failed") {
+        Write-Error "Capability host provisioning failed"
+        exit 1
+    }
+    elseif ($provisioningState -eq "Canceled") {
+        Write-Error "Capability host provisioning was canceled"
+        exit 1
+    }
+    else {
+        Write-Warning "Capability host is still provisioning (state: $provisioningState)"
+        Write-Host "Check the Azure portal for status." -ForegroundColor Yellow
     }
 }
 catch {
