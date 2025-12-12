@@ -39,7 +39,7 @@
         "value": "${ENABLE_MONITORING=true}"
       },
       "enableHostedAgents": {
-        "value": "${ENABLE_HOSTED_AGENTS=false}"
+        "value": "${ENABLE_HOSTED_AGENTS=true}"
       }
     }
 }
