@@ -19,10 +19,10 @@ hooks:
         # NOTE: because caphost creation is not idempotent, we cannot run this in bicep directly
         windows:
             shell: pwsh
-            run: scripts/create_capability_host.ps1
+            run: ./scripts/create_capability_host.ps1
         posix:
             shell: sh
-            run: scripts/create_capability_host.sh
+            run: ./scripts/create_capability_host.sh
 
 # Recommended extensions for this project
 requiredVersions:
