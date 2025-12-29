@@ -94,15 +94,20 @@ azd init --template Azure-Samples/ai-foundry-starter-basic
     azd init --template Azure-Samples/ai-foundry-starter-basic
     ```
 
-    This will perform a git clone
+    This will perform a git clone and prompt you for an environment name. We will need this later and will be the name of the resource group we will deploy resources into.
 
 2. Sign into your Azure account:
 
     ```shell
     azd auth login
     ```
+3. Deploy the Infrastructure
 
-3. Download a sample agent from GitHub:
+   ```shell
+   azd up <project-name>
+   ```
+
+4. Download a sample agent from GitHub:
 
     ```shell
     azd ai agent init -m <repo-path-to-agent.yaml>
