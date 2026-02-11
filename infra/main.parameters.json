@@ -40,6 +40,9 @@
       },
       "enableHostedAgents": {
         "value": "${ENABLE_HOSTED_AGENTS=false}"
+      },
+      "enableContainerAgents": {
+        "value": "${ENABLE_CONTAINER_AGENTS=false}"
       }
     }
 }

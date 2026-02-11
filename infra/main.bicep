@@ -81,6 +81,9 @@ var aiProjectDependentResources = json(aiProjectDependentResourcesJson)
 @description('Enable hosted agent deployment')
 param enableHostedAgents bool
 
+@description('Enable container-based agent deployment')
+param enableContainerAgents bool
+
 @description('Enable monitoring for the AI project')
 param enableMonitoring bool = true
 
@@ -103,7 +106,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // Build dependent resources array conditionally
 // Check if ACR already exists in the user-provided array to avoid duplicates
 var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'registry')
-var dependentResources = (enableHostedAgents) && !hasAcr ? union(aiProjectDependentResources, [
+var dependentResources = (enableHostedAgents || enableContainerAgents) && !hasAcr ? union(aiProjectDependentResources, [
   {
     resource: 'registry'
     connectionName: 'acr-connection'
@@ -129,6 +132,22 @@ module aiProject 'core/ai/ai-project.bicep' = {
   }
 }
 
+// Container Agent module
+module coboAgent 'core/ai/cobo-agent.bicep' = if (enableContainerAgents) {
+  scope: rg
+  name: 'cobo-agent'
+  params: {
+    location: location
+    tags: tags
+    containerRegistryName: aiProject.outputs.dependentResources.registry.name
+    openaiEndpoint: aiProject.outputs.aiServicesEndpoint
+    openaiApiVersion: '2025-03-01-preview'
+    aiServicesAccountName: aiProject.outputs.aiServicesAccountName
+    aiProjectName: aiFoundryProjectName
+    authAppId: aiProject.outputs.projectPrincipalId
+  }
+}
+
 // Resources
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_ACCOUNT_ID string = aiProject.outputs.accountId
@@ -136,6 +155,7 @@ output AZURE_AI_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_AI_ACCOUNT_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
+output AZURE_AI_PROJECT_PRINCIPAL_ID string = aiProject.outputs.projectPrincipalId
 
 // Endpoints
 output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
@@ -165,4 +185,8 @@ output AZURE_AI_SEARCH_SERVICE_NAME string = aiProject.outputs.dependentResource
 // Azure Storage
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResources.storage.connectionName
 output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.dependentResources.storage.accountName
+
+// COBO Agent outputs (only available if enableContainerAgents is true, used in post-deployment steps)
+output COBO_ACA_IDENTITY_PRINCIPAL_ID string = enableContainerAgents ? coboAgent!.outputs.COBO_ACA_IDENTITY_PRINCIPAL_ID : ''
+output SERVICE_API_RESOURCE_ID string = enableContainerAgents ? coboAgent!.outputs.SERVICE_API_RESOURCE_ID : ''
 
