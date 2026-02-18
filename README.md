@@ -108,7 +108,7 @@ azd init --template Azure-Samples/ai-foundry-starter-basic
     azd ai agent init -m <repo-path-to-agent.yaml>
     ```
 
-You'll find agent samples in the [`foundry-samples` repo](https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/hosted-agents).
+You'll find agent samples in the [`foundry-samples`](https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/hosted-agents) repo.
 
 ## Guidance
 
