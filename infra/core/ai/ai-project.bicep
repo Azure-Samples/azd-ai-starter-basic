@@ -146,6 +146,9 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
     ]
   }
 
+  // Capability host creation can happen only once. Running the bicep twice will lead to an error.
+  // We're using @onlyIfNotExists() to avoid errors on re-deployments.
+  @onlyIfNotExists()
   resource aiFoundryAccountCapabilityHost 'capabilityHosts@2025-10-01-preview' = if (enableHostedAgents) {
     name: 'agents'
     properties: {
