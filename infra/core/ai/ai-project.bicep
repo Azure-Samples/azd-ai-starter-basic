@@ -145,16 +145,6 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
       seqDeployments
     ]
   }
-
-  resource aiFoundryAccountCapabilityHost 'capabilityHosts@2025-10-01-preview' = if (enableHostedAgents) {
-    name: 'agents'
-    properties: {
-      capabilityHostKind: 'Agents'
-      // IMPORTANT: this is required to enable hosted agents deployment
-      // if no BYO Net is provided
-      enablePublicHostingEnvironment: true
-    }
-  }
 }
 
 

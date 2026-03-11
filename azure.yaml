@@ -1,12 +1,32 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
-name: ai-foundry-starter-basic
 
+# Azure Developer CLI (azd) configuration for the Forge project
+# This file defines how azd provisions and deploys Azure infrastructure and services.
+# Learn more: https://learn.microsoft.com/azure/developer/azure-developer-cli/
+
+# Project identifier used across Azure resources
+name: azd-ai-starter-basic
+
+# Infrastructure provisioning configuration
 infra:
-  provider: bicep
-  path: ./infra
+    provider: bicep
+    path: ./infra
+    module: main
 
+# Hooks to run custom scripts after provisioning infrastructure
+hooks:
+    postprovision:
+        # NOTE: because caphost creation is not idempotent, we cannot run this in bicep directly
+        windows:
+            shell: pwsh
+            run: ./scripts/create_capability_host.ps1
+            interactive: true
+        posix:
+            shell: sh
+            run: sh ./scripts/create_capability_host.sh
+            interactive: true
+
+# Recommended extensions for this project
 requiredVersions:
-  extensions:
-    # the azd ai agent extension is required for this template
-    "azure.ai.agents": ">=0.1.0-preview"
-
+    extensions:
+        azure.ai.agents: '>=0.1.3-preview'
