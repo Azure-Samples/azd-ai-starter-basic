@@ -110,4 +110,4 @@ module storageConnection '../ai/connection.bicep' = if (!empty(aiServicesAccount
 output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output storageAccountPrincipalId string = storageAccount.identity.principalId
-output storageConnectionName string = storageConnection.outputs.connectionName
+output storageConnectionName string = !empty(aiServicesAccountName) && !empty(aiProjectName) ? storageConnection!.outputs.connectionName : ''

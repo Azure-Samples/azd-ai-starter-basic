@@ -91,7 +91,7 @@ module applicationInsights '../monitor/applicationinsights.bicep' = if (shouldCr
     location: location
     tags: tags
     name: 'appi-${resourceToken}'
-    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    logAnalyticsWorkspaceId: logAnalytics!.outputs.id
   }
 }
 
@@ -164,15 +164,15 @@ resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/con
   name: 'appi-connection'
   properties: {
     category: 'AppInsights'
-    target: applicationInsights.outputs.id
+    target: applicationInsights!.outputs.id
     authType: 'ApiKey'
     isSharedToAll: true
     credentials: {
-      key: applicationInsights.outputs.connectionString
+      key: applicationInsights!.outputs.connectionString
     }
     metadata: {
       ApiType: 'Azure'
-      ResourceId: applicationInsights.outputs.id
+      ResourceId: applicationInsights!.outputs.id
     }
   }
 }
@@ -370,8 +370,8 @@ output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
 output aiServicesPrincipalId string = aiAccount.identity.principalId
 output projectName string = aiAccount::project.name
-output APPLICATIONINSIGHTS_CONNECTION_STRING string = shouldCreateAppInsights ? applicationInsights.outputs.connectionString : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsConnectionString : '')
-output APPLICATIONINSIGHTS_RESOURCE_ID string = shouldCreateAppInsights ? applicationInsights.outputs.id : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsResourceId : '')
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = shouldCreateAppInsights ? applicationInsights!.outputs.connectionString : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsConnectionString : '')
+output APPLICATIONINSIGHTS_RESOURCE_ID string = shouldCreateAppInsights ? applicationInsights!.outputs.id : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsResourceId : '')
 
 // Grouped dependent resources outputs
 output dependentResources object = {

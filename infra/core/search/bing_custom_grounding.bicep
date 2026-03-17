@@ -77,6 +77,6 @@ module aiSearchConnection '../ai/connection.bicep' = if (!empty(aiServicesAccoun
 
 // Outputs
 output bingCustomGroundingName string = bingCustomSearch.name
-output bingCustomGroundingConnectionName string = aiSearchConnection.outputs.connectionName
+output bingCustomGroundingConnectionName string = !empty(aiServicesAccountName) && !empty(aiProjectName) ? aiSearchConnection!.outputs.connectionName : ''
 output bingCustomGroundingResourceId string = bingCustomSearch.id
-output bingCustomGroundingConnectionId string = aiSearchConnection.outputs.connectionId
+output bingCustomGroundingConnectionId string = !empty(aiServicesAccountName) && !empty(aiProjectName) ? aiSearchConnection!.outputs.connectionId : ''
