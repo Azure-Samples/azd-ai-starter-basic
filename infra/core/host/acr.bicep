@@ -41,20 +41,21 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
     location: location
     tags: tags
     publicNetworkAccess: 'Enabled'
-    roleAssignments:[
+    roleAssignments: concat([
       {
         principalId: principalId
         principalType: principalType
         roleDefinitionIdOrName: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
       }
+    ], !empty(aiServicesAccountName) && !empty(aiProjectName) ? [
       // TODO SEPARATELY
       {
         // the foundry project itself can pull from the ACR
-        principalId: aiAccount::aiProject.identity.principalId
+        principalId: aiAccount::aiProject!.identity.principalId
         principalType: 'ServicePrincipal'
         roleDefinitionIdOrName: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
       }
-    ]
+    ] : [])
   }
 }
 
@@ -70,7 +71,7 @@ module acrConnection '../ai/connection.bicep' = if (!empty(aiServicesAccountName
       target: containerRegistry.outputs.loginServer
       authType: 'ManagedIdentity'
       credentials: {
-        clientId: aiAccount::aiProject.identity.principalId
+        clientId: aiAccount::aiProject!.identity.principalId
         resourceId: containerRegistry.outputs.resourceId
       }
       isSharedToAll: true
@@ -84,4 +85,4 @@ module acrConnection '../ai/connection.bicep' = if (!empty(aiServicesAccountName
 output containerRegistryName string = containerRegistry.outputs.name
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
 output containerRegistryResourceId string = containerRegistry.outputs.resourceId
-output containerRegistryConnectionName string = acrConnection.outputs.connectionName
+output containerRegistryConnectionName string = !empty(aiServicesAccountName) && !empty(aiProjectName) ? acrConnection!.outputs.connectionName : ''

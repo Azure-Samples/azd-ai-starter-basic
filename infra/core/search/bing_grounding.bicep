@@ -76,6 +76,6 @@ module bingSearchConnection '../ai/connection.bicep' = if (!empty(aiServicesAcco
 }
 
 output bingGroundingName string = bingSearch.name
-output bingGroundingConnectionName string = bingSearchConnection.outputs.connectionName
+output bingGroundingConnectionName string = !empty(aiServicesAccountName) && !empty(aiProjectName) ? bingSearchConnection!.outputs.connectionName : ''
 output bingGroundingResourceId string = bingSearch.id
-output bingGroundingConnectionId string = bingSearchConnection.outputs.connectionId
+output bingGroundingConnectionId string = !empty(aiServicesAccountName) && !empty(aiProjectName) ? bingSearchConnection!.outputs.connectionId : ''
