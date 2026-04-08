@@ -10,32 +10,47 @@ param aiProjectName string
 type ConnectionConfig = {
   @description('Name of the connection')
   name: string
-  
-  @description('Category of the connection (e.g., ContainerRegistry, AzureStorageAccount, CognitiveSearch)')
+
+  @description('Category of the connection (e.g., ContainerRegistry, AzureStorageAccount, CognitiveSearch, AzureOpenAI)')
   category: string
-  
+
   @description('Target endpoint or URL for the connection')
   target: string
-  
+
   @description('Authentication type')
   authType: 'AAD' | 'AccessKey' | 'AccountKey' | 'ApiKey' | 'CustomKeys' | 'ManagedIdentity' | 'None' | 'OAuth2' | 'PAT' | 'SAS' | 'ServicePrincipal' | 'UsernamePassword'
-  
+
   @description('Whether the connection is shared to all users (optional, defaults to true)')
   isSharedToAll: bool?
-  
-  @description('Credentials for non-ApiKey authentication types (optional)')
-  credentials: object?
-  
+
   @description('Additional metadata for the connection (optional)')
   metadata: object?
+
+  @description('Error message if the connection fails (optional)')
+  error: string?
+
+  @description('Expiry time for the connection (optional)')
+  expiryTime: string?
+
+  @description('Private endpoint requirement: Required, NotRequired, or NotApplicable (optional)')
+  peRequirement: ('NotApplicable' | 'NotRequired' | 'Required')?
+
+  @description('Private endpoint status: Active, Inactive, or NotApplicable (optional)')
+  peStatus: ('Active' | 'Inactive' | 'NotApplicable')?
+
+  @description('List of users to share the connection with (optional, alternative to isSharedToAll)')
+  sharedUserList: string[]?
+
+  @description('Whether to use workspace managed identity (optional)')
+  useWorkspaceManagedIdentity: bool?
 }
 
 @description('Connection configuration')
 param connectionConfig ConnectionConfig
 
 @secure()
-@description('API key for ApiKey based connections (optional)')
-param apiKey string = ''
+@description('Credentials for the connection. Kept as a separate @secure parameter to prevent secrets from appearing in deployment logs. Shape depends on authType — e.g. { key: "..." } for ApiKey, { clientId: "...", clientSecret: "..." } for OAuth2/ServicePrincipal.')
+param credentials object = {}
 
 
 // Get reference to the AI Services account and project
@@ -56,10 +71,14 @@ resource connection 'Microsoft.CognitiveServices/accounts/projects/connections@2
     target: connectionConfig.target
     authType: connectionConfig.authType
     isSharedToAll: connectionConfig.?isSharedToAll ?? true
-    credentials: connectionConfig.authType == 'ApiKey' ? {
-      key: apiKey
-    } : connectionConfig.?credentials
+    credentials: !empty(credentials) ? credentials : null
     metadata: connectionConfig.?metadata
+    error: connectionConfig.?error
+    expiryTime: connectionConfig.?expiryTime
+    peRequirement: connectionConfig.?peRequirement
+    peStatus: connectionConfig.?peStatus
+    sharedUserList: connectionConfig.?sharedUserList
+    useWorkspaceManagedIdentity: connectionConfig.?useWorkspaceManagedIdentity
   }
 }
 

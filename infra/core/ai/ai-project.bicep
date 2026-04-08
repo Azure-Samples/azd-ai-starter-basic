@@ -25,6 +25,10 @@ param existingAiAccountName string = ''
 @description('List of connections to provision')
 param connections array = []
 
+@secure()
+@description('Map of connection name to credentials object. Kept as @secure to prevent secrets from appearing in deployment logs. Example: { "my-conn": { "key": "secret" } }')
+param connectionCredentials object = {}
+
 @description('Also provision dependent resources and connect to the project')
 param additionalDependentResources dependentResourcesType
 
@@ -205,13 +209,8 @@ module aiConnections './connection.bicep' = [for (connection, index) in connecti
   params: {
     aiServicesAccountName: aiAccount.name
     aiProjectName: aiAccount::project.name
-    connectionConfig: {
-      name: connection.name
-      category: connection.category
-      target: connection.target
-      authType: connection.authType
-    }
-    apiKey: '' // API keys should be provided via secure parameters or Key Vault
+    connectionConfig: connection
+    credentials: connectionCredentials[?connection.name] ?? {}
   }
 }]
 
@@ -290,14 +289,14 @@ module existingAcrConnection './connection.bicep' = if (hasExistingAcr && !hasEx
       category: 'ContainerRegistry'
       target: existingContainerRegistryEndpoint
       authType: 'ManagedIdentity'
-      credentials: {
-        clientId: aiAccount::project.identity.principalId
-        resourceId: existingContainerRegistryResourceId
-      }
       isSharedToAll: true
       metadata: {
         ResourceId: existingContainerRegistryResourceId
       }
+    }
+    credentials: {
+      clientId: aiAccount::project.identity.principalId
+      resourceId: existingContainerRegistryResourceId
     }
   }
 }

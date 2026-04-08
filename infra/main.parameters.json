@@ -32,6 +32,9 @@
       "aiProjectConnectionsJson": {
         "value": "${AI_PROJECT_CONNECTIONS=[]}"
       },
+      "aiProjectConnectionCredentialsJson": {
+        "value": "${AI_PROJECT_CONNECTION_CREDENTIALS={}}"
+      },
       "aiProjectDependentResourcesJson": {
         "value": "${AI_PROJECT_DEPENDENT_RESOURCES=[]}"
       },

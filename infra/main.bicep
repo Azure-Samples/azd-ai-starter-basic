@@ -65,11 +65,16 @@ param aiProjectDeploymentsJson string = '[]'
 @description('List of connections')
 param aiProjectConnectionsJson string = '[]'
 
+@secure()
+@description('JSON map of connection name to credentials object. Example: {"my-conn":{"key":"secret"}}')
+param aiProjectConnectionCredentialsJson string = '{}'
+
 @description('List of resources to create and connect to the AI project')
 param aiProjectDependentResourcesJson string = '[]'
 
 var aiProjectDeployments = json(aiProjectDeploymentsJson)
 var aiProjectConnections = json(aiProjectConnectionsJson)
+var aiProjectConnectionCreds = json(aiProjectConnectionCredentialsJson)
 var aiProjectDependentResources = json(aiProjectDependentResourcesJson)
 
 @description('Enable hosted agent deployment')
@@ -140,6 +145,7 @@ module aiProject 'core/ai/ai-project.bicep' = {
     existingAiAccountName: aiFoundryResourceName
     deployments: aiProjectDeployments
     connections: aiProjectConnections
+    connectionCredentials: aiProjectConnectionCreds
     additionalDependentResources: dependentResources
     enableMonitoring: enableMonitoring
     enableHostedAgents: enableHostedAgents

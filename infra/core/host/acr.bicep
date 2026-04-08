@@ -69,14 +69,14 @@ module acrConnection '../ai/connection.bicep' = if (!empty(aiServicesAccountName
       category: 'ContainerRegistry'
       target: containerRegistry.outputs.loginServer
       authType: 'ManagedIdentity'
-      credentials: {
-        clientId: aiAccount::aiProject.identity.principalId
-        resourceId: containerRegistry.outputs.resourceId
-      }
       isSharedToAll: true
       metadata: {
         ResourceId: containerRegistry.outputs.resourceId
       }
+    }
+    credentials: {
+      clientId: aiAccount::aiProject.identity.principalId
+      resourceId: containerRegistry.outputs.resourceId
     }
   }
 }

@@ -68,7 +68,9 @@ module bingSearchConnection '../ai/connection.bicep' = if (!empty(aiServicesAcco
         type: 'bing_grounding'
       }
     }
-    apiKey: bingSearch.listKeys().key1
+    credentials: {
+      key: bingSearch.listKeys().key1
+    }
   }
   dependsOn: [
     bingSearchRoleAssignment

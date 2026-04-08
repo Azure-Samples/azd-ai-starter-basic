@@ -68,7 +68,9 @@ module aiSearchConnection '../ai/connection.bicep' = if (!empty(aiServicesAccoun
         type: 'bing_custom_search'
       }
     }
-    apiKey: bingCustomSearch.listKeys().key1
+    credentials: {
+      key: bingCustomSearch.listKeys().key1
+    }
   }
   dependsOn: [
     bingCustomSearchRoleAssignment
