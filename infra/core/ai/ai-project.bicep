@@ -375,6 +375,12 @@ output projectName string = aiAccount::project.name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = shouldCreateAppInsights ? applicationInsights.outputs.connectionString : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsConnectionString : '')
 output APPLICATIONINSIGHTS_RESOURCE_ID string = shouldCreateAppInsights ? applicationInsights.outputs.id : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsResourceId : '')
 
+// Connection outputs from the connections array
+output connectionIds array = [for (connection, index) in (connections ?? []): {
+  name: aiConnections[index].outputs.connectionName
+  id: aiConnections[index].outputs.connectionId
+}]
+
 // Grouped dependent resources outputs
 output dependentResources object = {
   registry: {

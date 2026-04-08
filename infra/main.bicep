@@ -196,3 +196,6 @@ output AZURE_AI_SEARCH_SERVICE_NAME string = aiProject.outputs.dependentResource
 // Azure Storage
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.dependentResources.storage.connectionName
 output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.dependentResources.storage.accountName
+
+// Connections
+output AI_PROJECT_CONNECTION_IDS_JSON string = string(aiProject.outputs.connectionIds)
