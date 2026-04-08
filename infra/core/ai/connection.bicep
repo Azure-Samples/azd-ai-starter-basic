@@ -73,12 +73,13 @@ resource connection 'Microsoft.CognitiveServices/accounts/projects/connections@2
     isSharedToAll: connectionConfig.?isSharedToAll ?? true
     credentials: !empty(credentials) ? credentials : null
     metadata: connectionConfig.?metadata
-    error: connectionConfig.?error
-    expiryTime: connectionConfig.?expiryTime
-    peRequirement: connectionConfig.?peRequirement
-    peStatus: connectionConfig.?peStatus
-    sharedUserList: connectionConfig.?sharedUserList
-    useWorkspaceManagedIdentity: connectionConfig.?useWorkspaceManagedIdentity
+    // Only include if they appear in the connectionConfig
+    ...connectionConfig.?error != null ? { error: connectionConfig.?error  } : {}
+    ...connectionConfig.?expiryTime != null ? { expiryTime: connectionConfig.?expiryTime  } : {}
+    ...connectionConfig.?peRequirement != null ? { peRequirement: connectionConfig.?peRequirement  } : {}
+    ...connectionConfig.?peStatus != null ? { peStatus: connectionConfig.?peStatus  } : {}
+    ...connectionConfig.?sharedUserList != null ? { sharedUserList: connectionConfig.?sharedUserList  } : {}
+    ...connectionConfig.?useWorkspaceManagedIdentity != null ? { useWorkspaceManagedIdentity: connectionConfig.?useWorkspaceManagedIdentity  } : {}
   }
 }
 
