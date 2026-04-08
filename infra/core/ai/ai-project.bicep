@@ -161,40 +161,27 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
 }
 
 
-// Create connection towards appinsights - only if we created a new App Insights resource
-resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = if (shouldCreateAppInsights) {
-  parent: aiAccount::project
-  name: 'appi-connection'
-  properties: {
-    category: 'AppInsights'
-    target: applicationInsights.outputs.id
-    authType: 'ApiKey'
-    isSharedToAll: true
-    credentials: {
-      key: applicationInsights.outputs.connectionString
-    }
-    metadata: {
-      ApiType: 'Azure'
-      ResourceId: applicationInsights.outputs.id
-    }
-  }
-}
+// Create connection towards appinsights:
+// - when we create a new App Insights resource, OR
+// - when the user provided an existing App Insights connection string + resource ID but no existing connection name
+// Both cases are merged into a single resource to avoid duplicate ARM resource definitions (which fail deployment).
+var shouldCreateExistingAppInsightsConnection = enableMonitoring && hasExistingAppInsightsConnectionString && !hasExistingAppInsightsConnection && !empty(existingApplicationInsightsResourceId)
+var shouldCreateAppInsightsConnection = shouldCreateAppInsights || shouldCreateExistingAppInsightsConnection
 
-// Create connection to existing App Insights - if user provided connection string but no existing connection
-resource existingAppInsightConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = if (enableMonitoring && hasExistingAppInsightsConnectionString && !hasExistingAppInsightsConnection && !empty(existingApplicationInsightsResourceId)) {
+resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = if (shouldCreateAppInsightsConnection) {
   parent: aiAccount::project
   name: 'appi-connection'
   properties: {
     category: 'AppInsights'
-    target: existingApplicationInsightsResourceId
+    target: shouldCreateAppInsights ? applicationInsights.outputs.id : existingApplicationInsightsResourceId
     authType: 'ApiKey'
     isSharedToAll: true
     credentials: {
-      key: existingApplicationInsightsConnectionString
+      key: shouldCreateAppInsights ? applicationInsights.outputs.connectionString : existingApplicationInsightsConnectionString
     }
     metadata: {
       ApiType: 'Azure'
-      ResourceId: existingApplicationInsightsResourceId
+      ResourceId: shouldCreateAppInsights ? applicationInsights.outputs.id : existingApplicationInsightsResourceId
     }
   }
 }
