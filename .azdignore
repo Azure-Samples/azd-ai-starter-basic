@@ -1,0 +1,9 @@
+.github/
+.gitignore
+
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE.md
+README.md
+SECURITY.md
+SUPPORT.md
