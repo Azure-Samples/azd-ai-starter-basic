@@ -18,7 +18,7 @@ type ConnectionConfig = {
   target: string
 
   @description('Authentication type')
-  authType: 'AAD' | 'AccessKey' | 'AccountKey' | 'AgenticIdentity' | 'ApiKey' | 'CustomKeys' | 'ProjectManagedIdentity' | 'None' | 'OAuth2' | 'PAT' | 'SAS' | 'ServicePrincipal' | 'UsernamePassword' | 'UserEntraToken'
+  authType: 'AAD' | 'AccessKey' | 'AccountKey' | 'AgenticIdentity' | 'ApiKey' | 'CustomKeys' | 'ManagedIdentity' | 'None' | 'OAuth2' | 'PAT' | 'SAS' | 'ServicePrincipal' | 'UsernamePassword' | 'UserEntraToken'
 
   @description('Whether the connection is shared to all users (optional, defaults to true)')
   isSharedToAll: bool?
