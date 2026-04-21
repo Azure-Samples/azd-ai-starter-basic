@@ -99,6 +99,7 @@ module applicationInsights '../monitor/applicationinsights.bicep' = if (shouldCr
     tags: tags
     name: 'appi-${resourceToken}'
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    projectMIPrincipalId: aiAccount::project.identity.principalId
   }
 }
 
@@ -201,32 +202,14 @@ module aiConnections './connection.bicep' = [for (connection, index) in connecti
   }
 }]
 
-resource localUserAiDeveloperRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: resourceGroup()
-  name: guid(subscription().id, resourceGroup().id, principalId, '64702f94-c441-49e6-a78b-ef80e0188fee')
+// Azure AI User for the developer, scoped to the Foundry Project.
+// Project scope is sufficient for creating/running agents and calling models via the project endpoint.
+resource localUserAzureAIUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: aiAccount::project
+  name: guid(subscription().id, resourceGroup().id, principalId, '53ca6127-db72-4b80-b1b0-d745d6d5456d')
   properties: {
     principalId: principalId
     principalType: principalType
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '64702f94-c441-49e6-a78b-ef80e0188fee')
-  }
-}
-
-resource localUserCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: resourceGroup()
-  name: guid(subscription().id, resourceGroup().id, principalId, 'a97b65f3-24c7-4388-baec-2e87135dc908')
-  properties: {
-    principalId: principalId
-    principalType: principalType
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-  }
-}
-
-resource projectCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: aiAccount
-  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, '53ca6127-db72-4b80-b1b0-d745d6d5456d')
-  properties: {
-    principalId: aiAccount::project.identity.principalId
-    principalType: 'ServicePrincipal'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')
   }
 }
