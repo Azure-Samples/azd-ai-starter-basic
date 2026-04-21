@@ -22,7 +22,7 @@ param aiServicesAccountName string = ''
 param aiProjectName string = ''
 
 @description('Name for the AI Foundry storage connection')
-param connectionName string = 'storage-connection'
+param connectionName string
 
 // Storage Account for the AI Services account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {

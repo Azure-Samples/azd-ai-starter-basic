@@ -28,7 +28,7 @@ param principalId string
 param principalType string
 
 @description('Name for the AI Foundry search connection')
-param connectionName string = 'azure-ai-search-connection'
+param connectionName string
 
 @description('Location for all resources')
 param location string = resourceGroup().location

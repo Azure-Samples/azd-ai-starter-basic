@@ -174,7 +174,7 @@ var shouldCreateAppInsightsConnection = shouldCreateAppInsights || shouldCreateE
 
 resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview' = if (shouldCreateAppInsightsConnection) {
   parent: aiAccount::project
-  name: 'appi-connection'
+  name: 'appi-${resourceToken}'
   properties: {
     category: 'AppInsights'
     target: shouldCreateAppInsights ? applicationInsights.outputs.id : existingApplicationInsightsResourceId
