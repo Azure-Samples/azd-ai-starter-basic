@@ -128,7 +128,7 @@ var shouldCreateAcr = enableHostedAgents && !hasAcr && empty(existingContainerRe
 var dependentResources = shouldCreateAcr ? union(aiProjectDependentResources, [
   {
     resource: 'registry'
-    connectionName: 'acr-connection'
+    connectionName: 'acr-${uniqueString(subscription().id, resourceGroupName, location)}'
   }
 ]) : aiProjectDependentResources
 

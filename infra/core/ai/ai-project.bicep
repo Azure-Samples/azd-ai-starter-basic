@@ -272,7 +272,7 @@ module existingAcrConnection './connection.bicep' = if (hasExistingAcr && !hasEx
     aiServicesAccountName: aiAccount.name
     aiProjectName: aiAccount::project.name
     connectionConfig: {
-      name: 'acr-connection'
+      name: 'acr-${resourceToken}'
       category: 'ContainerRegistry'
       target: existingContainerRegistryEndpoint
       authType: 'ManagedIdentity'
@@ -373,7 +373,7 @@ output dependentResources object = {
   registry: {
     name: hasAcrConnection ? acr!.outputs.containerRegistryName : ''
     loginServer: hasAcrConnection ? acr!.outputs.containerRegistryLoginServer : ((hasExistingAcr || hasExistingAcrConnection) ? existingContainerRegistryEndpoint : '')
-    connectionName: hasAcrConnection ? acr!.outputs.containerRegistryConnectionName : (hasExistingAcrConnection ? existingAcrConnectionName : (hasExistingAcr ? 'acr-connection' : ''))
+    connectionName: hasAcrConnection ? acr!.outputs.containerRegistryConnectionName : (hasExistingAcrConnection ? existingAcrConnectionName : (hasExistingAcr ? 'acr-${resourceToken}' : ''))
   }
   bing_grounding: {
     name: (hasBingConnection) ? bingGrounding!.outputs.bingGroundingName : ''

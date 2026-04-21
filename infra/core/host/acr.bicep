@@ -22,7 +22,7 @@ param aiServicesAccountName string = ''
 param aiProjectName string = ''
 
 @description('Name for the AI Foundry ACR connection')
-param connectionName string = 'acr-connection'
+param connectionName string
 
 // Get reference to the AI Services account and project to access their managed identities
 resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = if (!empty(aiServicesAccountName) && !empty(aiProjectName)) {
