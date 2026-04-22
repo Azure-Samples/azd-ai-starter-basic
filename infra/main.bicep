@@ -176,6 +176,25 @@ module existingAiProject 'core/ai/existing-ai-project.bicep' = if (useExistingAi
   }
 }
 
+// ACR for existing project — create when hosted agents need a registry but the existing project has none
+var shouldCreateAcrForExistingProject = useExistingAiProject && shouldCreateAcr
+var acrConnectionName = 'acr-${uniqueString(subscription().id, resourceGroupName, location)}'
+
+module acrForExistingProject 'core/host/acr.bicep' = if (shouldCreateAcrForExistingProject) {
+  scope: rg
+  name: 'acr-for-existing-project'
+  params: {
+    location: location
+    tags: tags
+    resourceName: 'cr${uniqueString(subscription().id, resourceGroupName, location)}'
+    connectionName: acrConnectionName
+    principalId: principalId
+    principalType: principalType
+    aiServicesAccountName: aiFoundryResourceName
+    aiProjectName: aiFoundryProjectName
+  }
+}
+
 // Resources
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_ACCOUNT_ID string = useExistingAiProject ? existingAiProject.outputs.accountId : aiProject.outputs.accountId
@@ -193,8 +212,8 @@ output APPLICATIONINSIGHTS_RESOURCE_ID string = useExistingAiProject ? existingA
 // Dependent Resources and Connections
 
 // ACR
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.registry.connectionName : aiProject.outputs.dependentResources.registry.connectionName
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = useExistingAiProject ? existingAiProject.outputs.dependentResources.registry.loginServer : aiProject.outputs.dependentResources.registry.loginServer
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = shouldCreateAcrForExistingProject ? acrForExistingProject.outputs.containerRegistryConnectionName : (useExistingAiProject ? existingAiProject.outputs.dependentResources.registry.connectionName : aiProject.outputs.dependentResources.registry.connectionName)
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = shouldCreateAcrForExistingProject ? acrForExistingProject.outputs.containerRegistryLoginServer : (useExistingAiProject ? existingAiProject.outputs.dependentResources.registry.loginServer : aiProject.outputs.dependentResources.registry.loginServer)
 
 // Bing Search
 output BING_GROUNDING_CONNECTION_NAME  string = useExistingAiProject ? existingAiProject.outputs.dependentResources.bing_grounding.connectionName : aiProject.outputs.dependentResources.bing_grounding.connectionName
