@@ -99,7 +99,6 @@ module applicationInsights '../monitor/applicationinsights.bicep' = if (shouldCr
     tags: tags
     name: 'appi-${resourceToken}'
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
-    projectMIPrincipalId: aiAccount::project.identity.principalId
   }
 }
 
@@ -201,6 +200,21 @@ module aiConnections './connection.bicep' = [for (connection, index) in connecti
     credentials: connectionCredentials[?connection.name] ?? {}
   }
 }]
+
+// Log Analytics Reader for the Foundry Project managed identity.
+// Required for continuous evaluation to query Application Insights traces.
+// This must NOT be gated on shouldCreateAppInsights, because after first deploy
+// the App Insights outputs get saved as azd env vars, making shouldCreateAppInsights=false
+// on subsequent provisions and skipping the entire applicationInsights module.
+resource projectLogAnalyticsReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableMonitoring) {
+  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, '73c42c96-874c-492b-b04d-ab87d138a893')
+  properties: {
+    principalId: aiAccount::project.identity.principalId
+    principalType: 'ServicePrincipal'
+    // Log Analytics Reader
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '73c42c96-874c-492b-b04d-ab87d138a893')
+  }
+}
 
 // Azure AI User for the developer, scoped to the Foundry Project.
 // Project scope is sufficient for creating/running agents and calling models via the project endpoint.
