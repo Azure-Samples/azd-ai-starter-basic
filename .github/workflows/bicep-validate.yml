@@ -29,7 +29,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Bicep CLI
-        run: az bicep install
+        run: |
+          # Install az CLI if not present (needed for act/local testing)
+          if ! command -v az &> /dev/null; then
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          fi
+          az bicep install
 
       - name: Lint main.bicep
         run: az bicep lint --file infra/main.bicep
