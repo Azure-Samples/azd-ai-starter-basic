@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "bicep-test-existing"
+    },
+    "location": {
+      "value": "eastus2"
+    },
+    "principalId": {
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    "principalType": {
+      "value": "User"
+    },
+    "aiFoundryResourceName": {
+      "value": "my-existing-account"
+    },
+    "aiFoundryProjectName": {
+      "value": "my-existing-project"
+    },
+    "useExistingAiProject": {
+      "value": true
+    },
+    "existingAcrConnectionName": {
+      "value": "existing-acr-connection"
+    },
+    "existingContainerRegistryEndpoint": {
+      "value": "myregistry.azurecr.io"
+    },
+    "existingApplicationInsightsConnectionString": {
+      "value": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://eastus2-0.in.applicationinsights.azure.com/"
+    },
+    "existingApplicationInsightsResourceId": {
+      "value": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Insights/components/appi-test"
+    }
+  }
+}

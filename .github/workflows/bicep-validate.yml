@@ -1,0 +1,91 @@
+name: Bicep Validate
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  # Override with your test subscription/location
+  AZURE_LOCATION: eastus2
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Layer 1: Lint & Build (no Azure creds needed)
+  # ─────────────────────────────────────────────
+  lint:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bicep CLI
+        run: az bicep install
+
+      - name: Lint main.bicep
+        run: az bicep lint --file infra/main.bicep
+
+      - name: Build main.bicep
+        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+
+      - name: Build all modules independently
+        run: |
+          for f in infra/modules/*.bicep; do
+            echo "::group::Building $(basename $f)"
+            az bicep build --file "$f" --stdout > /dev/null
+            echo "::endgroup::"
+          done
+
+  # ─────────────────────────────────────────────
+  # Layer 2 & 3: Validate + What-If per scenario
+  # ─────────────────────────────────────────────
+  validate:
+    name: "Validate: ${{ matrix.scenario }}"
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scenario: new-project
+            params: infra/tests/new-project.parameters.json
+          - scenario: new-project-with-model
+            params: infra/tests/new-project-with-model.parameters.json
+          - scenario: existing-project
+            params: infra/tests/existing-project.parameters.json
+          - scenario: existing-project-new-acr
+            params: infra/tests/existing-project-new-acr.parameters.json
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate template
+        run: |
+          az deployment sub validate \
+            --location "${{ env.AZURE_LOCATION }}" \
+            --template-file infra/main.bicep \
+            --parameters @${{ matrix.params }}
+
+      - name: What-If preview
+        run: |
+          az deployment sub what-if \
+            --location "${{ env.AZURE_LOCATION }}" \
+            --template-file infra/main.bicep \
+            --parameters @${{ matrix.params }} \
+            --no-pretty-print
