@@ -107,16 +107,16 @@ module acr './modules/acr.bicep' = if (createAcr) {
 // Resources
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_ACCOUNT_ID string = aiProject.outputs.accountId
-output AZURE_AI_PROJECT_ID string = aiProject.outputs.projectId
-output AZURE_AI_FOUNDRY_PROJECT_ID string = aiProject.outputs.projectId
 output AZURE_AI_ACCOUNT_NAME string = aiProject.outputs.accountName
 output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
 
-// Endpoints
-output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.projectEndpoint
+// Platform-injected variable names (match hosted agent runtime)
+// See: https://learn.microsoft.com/azure/foundry/agents/how-to/deploy-hosted-agent#platform-injected-environment-variables
+output FOUNDRY_PROJECT_ENDPOINT string = aiProject.outputs.projectEndpoint
+output FOUNDRY_PROJECT_ARM_ID string = aiProject.outputs.projectId
 output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.openAiEndpoint
 
-// Monitoring
+// Monitoring (already matches platform-injected name)
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = aiProject.outputs.appInsightsConnectionString
 output APPLICATIONINSIGHTS_RESOURCE_ID string = aiProject.outputs.appInsightsResourceId
 
