@@ -1,5 +1,4 @@
 targetScope = 'subscription'
-// targetScope = 'resourceGroup'
 
 @minLength(1)
 @maxLength(64)
@@ -11,41 +10,9 @@ param environmentName string
 @description('Name of the resource group to use or create')
 param resourceGroupName string = 'rg-${environmentName}'
 
-// Restricted locations to match list from
-// https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/responses?tabs=python-key#region-availability
 @minLength(1)
 @description('Primary location for all resources')
-@allowed([
-  'australiaeast'
-  'brazilsouth'
-  'canadacentral'
-  'canadaeast'
-  'eastus'
-  'eastus2'
-  'francecentral'
-  'germanywestcentral'
-  'italynorth'
-  'japaneast'
-  'koreacentral'
-  'northcentralus'
-  'norwayeast'
-  'polandcentral'
-  'southafricanorth'
-  'southcentralus'
-  'southeastasia'
-  'southindia'
-  'spaincentral'
-  'swedencentral'
-  'switzerlandnorth'
-  'uaenorth'
-  'uksouth'
-  'westus'
-  'westus2'
-  'westus3'
-])
 param location string
-
-param aiDeploymentsLocation string
 
 @description('Id of the user or app to assign application roles')
 param principalId string
@@ -53,185 +20,111 @@ param principalId string
 @description('Principal type of user or app')
 param principalType string
 
-@description('Optional. Name of an existing AI Services account within the resource group. If not provided, a new one will be created.')
+@description('Optional. Name of the AI Account. If not provided, a new one will be created with an auto-generated name.')
 param aiFoundryResourceName string = ''
 
-@description('Optional. Name of the AI Foundry project. If not provided, a default name will be used.')
+@description('Name of the AI Foundry project')
 param aiFoundryProjectName string = 'ai-project-${environmentName}'
 
-@description('List of model deployments')
+@description('When true, reference an existing Foundry project instead of creating one')
+param useExistingAiProject bool = false
+
+// Extension-injected from azure.yaml service config
+@description('Model deployments (JSON array from azure.yaml)')
 param aiProjectDeploymentsJson string = '[]'
 
-@description('List of connections')
+@description('Connections (JSON array from azure.yaml)')
 param aiProjectConnectionsJson string = '[]'
 
 @secure()
-@description('JSON map of connection name to credentials object. Example: {"my-conn":{"key":"secret"}}')
+@description('Connection credentials (JSON map from azure.yaml)')
+#disable-next-line secure-parameter-default
 param aiProjectConnectionCredentialsJson string = '{}'
 
-@description('List of resources to create and connect to the AI project')
-param aiProjectDependentResourcesJson string = '[]'
-
-var aiProjectDeployments = json(aiProjectDeploymentsJson)
-var aiProjectConnections = json(aiProjectConnectionsJson)
-var aiProjectConnectionCreds = json(aiProjectConnectionCredentialsJson)
-var aiProjectDependentResources = json(aiProjectDependentResourcesJson)
-
-@description('Enable hosted agent deployment')
-param enableHostedAgents bool
-
-@description('Enable the capability host for supporting BYO storage of agent conversations. When false and hosted agents are enabled, the capability host is not created.')
-param enableCapabilityHost bool
-
-@description('Enable monitoring for the AI project')
-param enableMonitoring bool
-
-@description('When true, skip Foundry project/role/connection provisioning and reference the existing project read-only. Use when pointing at an existing Foundry project via --project-id.')
-param useExistingAiProject bool = false
-
-@description('Optional. Existing container registry resource ID. If provided, no new ACR will be created and a connection to this ACR will be established.')
-param existingContainerRegistryResourceId string = ''
-
-@description('Optional. Existing container registry endpoint (login server). Required if existingContainerRegistryResourceId is provided.')
-param existingContainerRegistryEndpoint string = ''
-
-@description('Optional. Name of an existing ACR connection on the Foundry project. If provided, no new ACR or connection will be created.')
+// Existing resource detection (set by extension when reusing resources)
+@description('Existing ACR connection name on the Foundry project. If set, ACR creation is skipped.')
 param existingAcrConnectionName string = ''
 
-@description('Optional. Existing Application Insights connection string. If provided, a connection will be created but no new App Insights resource.')
+@description('Existing ACR login server endpoint. Used as output when ACR creation is skipped.')
+param existingContainerRegistryEndpoint string = ''
+
+@description('Existing App Insights connection string (for existing projects)')
 param existingApplicationInsightsConnectionString string = ''
 
-@description('Optional. Existing Application Insights resource ID. Used for connection metadata when providing an existing App Insights.')
+@description('Existing App Insights resource ID (for existing projects)')
 param existingApplicationInsightsResourceId string = ''
 
-@description('Optional. Name of an existing Application Insights connection on the Foundry project. If provided, no new App Insights or connection will be created.')
-param existingAppInsightsConnectionName string = ''
+var tags = { 'azd-env-name': environmentName }
+var createAcr = empty(existingAcrConnectionName)
 
-// Tags that should be applied to all resources.
-// 
-// Note that 'azd-service-name' tags should be applied separately to service host resources.
-// Example usage:
-//   tags: union(tags, { 'azd-service-name': <service name in azure.yaml> })
-var tags = {
-  'azd-env-name': environmentName
-}
-
-// Check if resource group exists and create it if it doesn't
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: resourceGroupName
   location: location
   tags: tags
 }
 
-// Build dependent resources array conditionally
-// Check if ACR already exists in the user-provided array to avoid duplicates
-// Also skip if user provided an existing container registry endpoint or connection name
-var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'registry')
-var shouldCreateAcr = enableHostedAgents && !hasAcr && empty(existingContainerRegistryResourceId) && empty(existingAcrConnectionName)
-var dependentResources = shouldCreateAcr ? union(aiProjectDependentResources, [
-  {
-    resource: 'registry'
-    connectionName: 'acr-${uniqueString(subscription().id, resourceGroupName, location)}'
-  }
-]) : aiProjectDependentResources
+// ── AI Foundry Project (account + project + monitoring + RBAC) ──
 
-// AI Project module — only when creating new resources
-module aiProject 'core/ai/ai-project.bicep' = if (!useExistingAiProject) {
+module aiProject './modules/ai-project.bicep' = {
   scope: rg
   name: 'ai-project'
   params: {
+    location: location
     tags: tags
-    location: aiDeploymentsLocation
     aiFoundryProjectName: aiFoundryProjectName
+    aiAccountName: aiFoundryResourceName
+    deployments: json(aiProjectDeploymentsJson)
+    connections: json(aiProjectConnectionsJson)
+    connectionCredentials: json(aiProjectConnectionCredentialsJson)
     principalId: principalId
     principalType: principalType
-    existingAiAccountName: aiFoundryResourceName
-    deployments: aiProjectDeployments
-    connections: aiProjectConnections
-    connectionCredentials: aiProjectConnectionCreds
-    additionalDependentResources: dependentResources
-    enableMonitoring: enableMonitoring
-    enableHostedAgents: enableHostedAgents
-    enableCapabilityHost: enableCapabilityHost
-    existingContainerRegistryResourceId: existingContainerRegistryResourceId
-    existingContainerRegistryEndpoint: existingContainerRegistryEndpoint
-    existingAcrConnectionName: existingAcrConnectionName
-    existingApplicationInsightsConnectionString: existingApplicationInsightsConnectionString
-    existingApplicationInsightsResourceId: existingApplicationInsightsResourceId
-    existingAppInsightsConnectionName: existingAppInsightsConnectionName
+    useExistingAiProject: useExistingAiProject
+    existingAppInsightsConnectionString: existingApplicationInsightsConnectionString
+    existingAppInsightsResourceId: existingApplicationInsightsResourceId
   }
 }
 
-// Existing project module — read-only reference when reusing an existing Foundry project
-module existingAiProject 'core/ai/existing-ai-project.bicep' = if (useExistingAiProject) {
-  scope: rg
-  name: 'existing-ai-project'
-  params: {
-    aiServicesAccountName: aiFoundryResourceName
-    aiFoundryProjectName: aiFoundryProjectName
-    existingAcrConnectionName: existingAcrConnectionName
-    existingContainerRegistryEndpoint: existingContainerRegistryEndpoint
-    existingApplicationInsightsConnectionString: existingApplicationInsightsConnectionString
-    existingApplicationInsightsResourceId: existingApplicationInsightsResourceId
-  }
-}
+// ── Container Registry (for hosted agent image builds) ──
 
-// ACR for existing project — create when hosted agents need a registry but the existing project has none
-var shouldCreateAcrForExistingProject = useExistingAiProject && shouldCreateAcr
-var acrConnectionName = 'acr-${uniqueString(subscription().id, resourceGroupName, location)}'
-
-module acrForExistingProject 'core/host/acr.bicep' = if (shouldCreateAcrForExistingProject) {
+module acr './modules/acr.bicep' = if (createAcr) {
   scope: rg
-  name: 'acr-for-existing-project'
+  name: 'acr'
   params: {
     location: location
     tags: tags
-    resourceName: 'cr${uniqueString(subscription().id, resourceGroupName, location)}'
-    connectionName: acrConnectionName
+    aiAccountName: aiProject.outputs.accountName
+    aiProjectName: aiProject.outputs.projectName
+    projectPrincipalId: aiProject.outputs.projectPrincipalId
     principalId: principalId
     principalType: principalType
-    aiServicesAccountName: aiFoundryResourceName
-    aiProjectName: aiFoundryProjectName
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// Outputs
+// ═══════════════════════════════════════════════════════
+
 // Resources
 output AZURE_RESOURCE_GROUP string = resourceGroupName
-output AZURE_AI_ACCOUNT_ID string = useExistingAiProject ? existingAiProject.outputs.accountId : aiProject.outputs.accountId
-output AZURE_AI_PROJECT_ID string = useExistingAiProject ? existingAiProject.outputs.projectId : aiProject.outputs.projectId
-output AZURE_AI_FOUNDRY_PROJECT_ID string = useExistingAiProject ? existingAiProject.outputs.projectId : aiProject.outputs.projectId
-output AZURE_AI_ACCOUNT_NAME string = useExistingAiProject ? existingAiProject.outputs.aiServicesAccountName : aiProject.outputs.aiServicesAccountName
-output AZURE_AI_PROJECT_NAME string = useExistingAiProject ? existingAiProject.outputs.projectName : aiProject.outputs.projectName
+output AZURE_AI_ACCOUNT_ID string = aiProject.outputs.accountId
+output AZURE_AI_ACCOUNT_NAME string = aiProject.outputs.accountName
+output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
 
-// Endpoints
-output AZURE_AI_PROJECT_ENDPOINT string = useExistingAiProject ? existingAiProject.outputs.AZURE_AI_PROJECT_ENDPOINT : aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
-output AZURE_OPENAI_ENDPOINT string = useExistingAiProject ? existingAiProject.outputs.AZURE_OPENAI_ENDPOINT : aiProject.outputs.AZURE_OPENAI_ENDPOINT
-output APPLICATIONINSIGHTS_CONNECTION_STRING string = useExistingAiProject ? existingAiProject.outputs.APPLICATIONINSIGHTS_CONNECTION_STRING : aiProject.outputs.APPLICATIONINSIGHTS_CONNECTION_STRING
-output APPLICATIONINSIGHTS_RESOURCE_ID string = useExistingAiProject ? existingAiProject.outputs.APPLICATIONINSIGHTS_RESOURCE_ID : aiProject.outputs.APPLICATIONINSIGHTS_RESOURCE_ID
+// Platform-injected variable names (match hosted agent runtime)
+// See: https://learn.microsoft.com/azure/foundry/agents/how-to/deploy-hosted-agent#platform-injected-environment-variables
+output FOUNDRY_PROJECT_ENDPOINT string = aiProject.outputs.projectEndpoint
+output FOUNDRY_PROJECT_ARM_ID string = aiProject.outputs.projectId
+output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.openAiEndpoint
 
-// Dependent Resources and Connections
+// Monitoring (already matches platform-injected name)
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = aiProject.outputs.appInsightsConnectionString
+output APPLICATIONINSIGHTS_RESOURCE_ID string = aiProject.outputs.appInsightsResourceId
 
-// ACR
-output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = shouldCreateAcrForExistingProject ? acrForExistingProject.outputs.containerRegistryConnectionName : (useExistingAiProject ? existingAiProject.outputs.dependentResources.registry.connectionName : aiProject.outputs.dependentResources.registry.connectionName)
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = shouldCreateAcrForExistingProject ? acrForExistingProject.outputs.containerRegistryLoginServer : (useExistingAiProject ? existingAiProject.outputs.dependentResources.registry.loginServer : aiProject.outputs.dependentResources.registry.loginServer)
-
-// Bing Search
-output BING_GROUNDING_CONNECTION_NAME  string = useExistingAiProject ? existingAiProject.outputs.dependentResources.bing_grounding.connectionName : aiProject.outputs.dependentResources.bing_grounding.connectionName
-output BING_GROUNDING_RESOURCE_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.bing_grounding.name : aiProject.outputs.dependentResources.bing_grounding.name
-output BING_GROUNDING_CONNECTION_ID string = useExistingAiProject ? existingAiProject.outputs.dependentResources.bing_grounding.connectionId : aiProject.outputs.dependentResources.bing_grounding.connectionId
-
-// Bing Custom Search
-output BING_CUSTOM_GROUNDING_CONNECTION_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.bing_custom_grounding.connectionName : aiProject.outputs.dependentResources.bing_custom_grounding.connectionName
-output BING_CUSTOM_GROUNDING_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.bing_custom_grounding.name : aiProject.outputs.dependentResources.bing_custom_grounding.name
-output BING_CUSTOM_GROUNDING_CONNECTION_ID string = useExistingAiProject ? existingAiProject.outputs.dependentResources.bing_custom_grounding.connectionId : aiProject.outputs.dependentResources.bing_custom_grounding.connectionId
-
-// Azure AI Search
-output AZURE_AI_SEARCH_CONNECTION_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.search.connectionName : aiProject.outputs.dependentResources.search.connectionName
-output AZURE_AI_SEARCH_SERVICE_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.search.serviceName : aiProject.outputs.dependentResources.search.serviceName
-
-// Azure Storage
-output AZURE_STORAGE_CONNECTION_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.storage.connectionName : aiProject.outputs.dependentResources.storage.connectionName
-output AZURE_STORAGE_ACCOUNT_NAME string = useExistingAiProject ? existingAiProject.outputs.dependentResources.storage.accountName : aiProject.outputs.dependentResources.storage.accountName
+// Container Registry
+#disable-next-line BCP318
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = createAcr ? acr.outputs.loginServer : existingContainerRegistryEndpoint
+#disable-next-line BCP318
+output AZURE_AI_PROJECT_ACR_CONNECTION_NAME string = createAcr ? acr.outputs.connectionName : existingAcrConnectionName
 
 // Connections
-output AI_PROJECT_CONNECTION_IDS_JSON string = useExistingAiProject ? string(existingAiProject.outputs.connectionIds) : string(aiProject.outputs.connectionIds)
+output AI_PROJECT_CONNECTION_IDS_JSON string = string(aiProject.outputs.connectionIds)
