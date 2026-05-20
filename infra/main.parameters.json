@@ -59,6 +59,9 @@
       "existingAcrConnectionName": {
         "value": "${AZURE_AI_PROJECT_ACR_CONNECTION_NAME=}"
       },
+      "skipAcr": {
+        "value": "${AZD_AGENT_SKIP_ACR=false}"
+      },
       "existingApplicationInsightsConnectionString": {
         "value": "${APPLICATIONINSIGHTS_CONNECTION_STRING=}"
       },

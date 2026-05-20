@@ -98,6 +98,9 @@ param existingContainerRegistryEndpoint string = ''
 @description('Optional. Name of an existing ACR connection on the Foundry project. If provided, no new ACR or connection will be created.')
 param existingAcrConnectionName string = ''
 
+@description('Optional. Skip ACR creation entirely (e.g. for code-deploy scenarios where no container registry is needed). Defaults to false for backward compatibility.')
+param skipAcr bool = false
+
 @description('Optional. Existing Application Insights connection string. If provided, a connection will be created but no new App Insights resource.')
 param existingApplicationInsightsConnectionString string = ''
 
@@ -127,7 +130,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // Check if ACR already exists in the user-provided array to avoid duplicates
 // Also skip if user provided an existing container registry endpoint or connection name
 var hasAcr = contains(map(aiProjectDependentResources, r => r.resource), 'registry')
-var shouldCreateAcr = enableHostedAgents && !hasAcr && empty(existingContainerRegistryResourceId) && empty(existingAcrConnectionName)
+var shouldCreateAcr = !skipAcr && enableHostedAgents && !hasAcr && empty(existingContainerRegistryResourceId) && empty(existingAcrConnectionName)
 var dependentResources = shouldCreateAcr ? union(aiProjectDependentResources, [
   {
     resource: 'registry'
