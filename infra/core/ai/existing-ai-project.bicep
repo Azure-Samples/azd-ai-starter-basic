@@ -19,7 +19,7 @@ param existingApplicationInsightsConnectionString string = ''
 param existingApplicationInsightsResourceId string = ''
 
 @description('Model deployments to create on the existing AI Services account')
-param deployments array = []
+param deployments deploymentsType
 
 @description('List of connections to provision on the existing project')
 param connections array = []
@@ -111,3 +111,29 @@ output dependentResources object = {
     connectionName: ''
   }
 }
+
+type deploymentsType = {
+  @description('Specify the name of cognitive service account deployment.')
+  name: string
+
+  @description('Required. Properties of Cognitive Services account deployment model.')
+  model: {
+    @description('Required. The name of Cognitive Services account deployment model.')
+    name: string
+
+    @description('Required. The format of Cognitive Services account deployment model.')
+    format: string
+
+    @description('Required. The version of Cognitive Services account deployment model.')
+    version: string
+  }
+
+  @description('The resource model definition representing SKU.')
+  sku: {
+    @description('Required. The name of the resource model definition representing SKU.')
+    name: string
+
+    @description('The capacity of the resource model definition representing SKU.')
+    capacity: int
+  }
+}[]?
