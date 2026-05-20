@@ -169,6 +169,7 @@ module existingAiProject 'core/ai/existing-ai-project.bicep' = if (useExistingAi
   params: {
     aiServicesAccountName: aiFoundryResourceName
     aiFoundryProjectName: aiFoundryProjectName
+    deployments: aiProjectDeployments
     existingAcrConnectionName: existingAcrConnectionName
     existingContainerRegistryEndpoint: existingContainerRegistryEndpoint
     existingApplicationInsightsConnectionString: existingApplicationInsightsConnectionString
