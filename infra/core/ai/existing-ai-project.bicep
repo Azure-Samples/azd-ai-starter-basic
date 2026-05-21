@@ -50,6 +50,7 @@ module aiConnections './connection.bicep' = [for (connection, index) in connecti
 }]
 
 // Outputs — same shape as ai-project.bicep so main.bicep can use either interchangeably
+output AZURE_AI_PROJECT_ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API']
 output FOUNDRY_PROJECT_ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API']
 output AZURE_OPENAI_ENDPOINT string = aiAccount.properties.endpoints['OpenAI Language Model Instance API']
 output aiServicesEndpoint string = aiAccount.properties.endpoint
