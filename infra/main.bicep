@@ -45,7 +45,7 @@ param resourceGroupName string = 'rg-${environmentName}'
 ])
 param location string
 
-param aiDeploymentsLocation string
+param aiDeploymentsLocation string = location
 
 @description('Id of the user or app to assign application roles')
 param principalId string
