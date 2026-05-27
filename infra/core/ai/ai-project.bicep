@@ -59,6 +59,37 @@ param existingApplicationInsightsResourceId string = ''
 @description('Optional. Name of an existing Application Insights connection on the Foundry project. If provided, no new App Insights or connection will be created.')
 param existingAppInsightsConnectionName string = ''
 
+// ---------------------------------------------------------------------
+// Existing account parameters (TBD resolution: support BYO Foundry account)
+// ---------------------------------------------------------------------
+
+@description('When true, reference an existing AI Foundry account instead of creating one. A new project (and its model deployments, capability host, and connections) is still created on the existing account. Implied true when existingAiAccountResourceId is non-empty. The account MUST live in the SAME resource group as this deployment.')
+param useExistingAiAccount bool = false
+
+@description('Optional. Full ARM resource ID of an existing AI Foundry (Microsoft.CognitiveServices/accounts, kind=AIServices) account to reuse. The account name is parsed from this ID. The account MUST live in the SAME resource group as this deployment; subscription/RG segments of the ID are accepted for naming consistency but not honored for scope.')
+param existingAiAccountResourceId string = ''
+
+// ---------------------------------------------------------------------
+// Network parameters
+// ---------------------------------------------------------------------
+
+@description('Network mode for the AI Foundry account: none (public, default) | managed (Microsoft-managed network) | byo-vnet (customer-delegated agent subnet + private endpoint).')
+@allowed([
+  'none'
+  'managed'
+  'byo-vnet'
+])
+param networkMode string = 'none'
+
+@description('Resource ID of the agent subnet (delegated to Microsoft.App/environments). Required when networkMode is byo-vnet.')
+param agentSubnetId string = ''
+
+@description('Public IPv4 addresses or CIDRs allowed to reach the account data plane while public access is enabled. Used only when networkMode is byo-vnet.')
+param clientIpAllowList array = []
+
+@description('When true, set publicNetworkAccess to Disabled (fully lock down the account; requires running azd from inside the VNet). Only relevant when networkMode is byo-vnet.')
+param disablePublicNetworkAccess bool = false
+
 // Load abbreviations
 var abbrs = loadJsonContent('../../abbreviations.json')
 
@@ -82,6 +113,71 @@ var searchConnectionName = hasSearchConnection ? filter(additionalDependentResou
 var bingConnectionName = hasBingConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_grounding')[0].connectionName : ''
 var bingCustomConnectionName = hasBingCustomConnection ? filter(additionalDependentResources, conn => conn.resource == 'bing_custom_grounding')[0].connectionName : ''
 
+// ---------------------------------------------------------------------
+// Resolved account name + network derivations
+// ---------------------------------------------------------------------
+
+var hasExistingAccountResourceId = !empty(existingAiAccountResourceId)
+var resolvedUseExistingAiAccount = useExistingAiAccount || hasExistingAccountResourceId
+var accountNameFromId = hasExistingAccountResourceId ? last(split(existingAiAccountResourceId, '/')) : ''
+// Single resolved name used by both the new and existing branches so the
+// nested children resolve identically. Precedence: ARM-ID-derived name >
+// existingAiAccountName param > auto-generated token.
+var resolvedAccountName = !empty(accountNameFromId)
+  ? accountNameFromId
+  : (!empty(existingAiAccountName) ? existingAiAccountName : 'ai-account-${resourceToken}')
+
+var isByoVnet = networkMode == 'byo-vnet'
+var isManaged = networkMode == 'managed'
+
+var ipRules = [for ip in clientIpAllowList: { value: ip }]
+
+// publicNetworkAccess:
+//   none / managed -> Enabled (managed network handles isolation Foundry-side)
+//   byo-vnet       -> Enabled with Deny ACL + IP allow-list, unless
+//                     disablePublicNetworkAccess=true (fully private; caller
+//                     must reach the account over the private endpoint).
+var effectivePublicNetworkAccess = isByoVnet
+  ? (disablePublicNetworkAccess ? 'Disabled' : 'Enabled')
+  : 'Enabled'
+
+// networkAcls: only meaningful for byo-vnet; managed and none use the default Allow.
+var effectiveNetworkAcls = isByoVnet
+  ? {
+      // Deny by default. AzureServices bypass keeps the Foundry control plane
+      // reachable. User-supplied IPs in clientIpAllowList let `azd deploy` and
+      // interactive tooling work from the developer's machine while public
+      // access stays Enabled.
+      defaultAction: 'Deny'
+      virtualNetworkRules: []
+      ipRules: ipRules
+      bypass: 'AzureServices'
+    }
+  : {
+      defaultAction: 'Allow'
+      virtualNetworkRules: []
+      ipRules: []
+    }
+
+// networkInjections: omitted for none; managed uses useMicrosoftManagedNetwork=true; byo-vnet uses the customer subnet.
+var effectiveNetworkInjections = isManaged
+  ? [
+      {
+        scenario: 'agent'
+        subnetArmId: ''
+        useMicrosoftManagedNetwork: true
+      }
+    ]
+  : (isByoVnet
+      ? [
+          {
+            scenario: 'agent'
+            subnetArmId: agentSubnetId
+            useMicrosoftManagedNetwork: false
+          }
+        ]
+      : null)
+
 // Enable monitoring via Log Analytics and Application Insights
 module logAnalytics '../monitor/loganalytics.bicep' = if (shouldCreateAppInsights) {
   name: 'logAnalytics'
@@ -103,10 +199,11 @@ module applicationInsights '../monitor/applicationinsights.bicep' = if (shouldCr
   }
 }
 
-// Always create a new AI Account for now (simplified approach)
-// TODO: Add support for existing accounts in a future version
-resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
-  name: !empty(existingAiAccountName) ? existingAiAccountName : 'ai-account-${resourceToken}'
+// New AI Account -- created only when not reusing an existing one. All network
+// properties (networkAcls, publicNetworkAccess, networkInjections) live here;
+// the existing branch never modifies them on the existing account.
+resource newAiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = if (!resolvedUseExistingAiAccount) {
+  name: resolvedAccountName
   location: location
   tags: tags
   sku: {
@@ -118,16 +215,22 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
   }
   properties: {
     allowProjectManagement: true
-    customSubDomainName: !empty(existingAiAccountName) ? existingAiAccountName : 'ai-account-${resourceToken}'
-    networkAcls: {
-      defaultAction: 'Allow'
-      virtualNetworkRules: []
-      ipRules: []
-    }
-    publicNetworkAccess: 'Enabled'
+    customSubDomainName: resolvedAccountName
+    networkAcls: effectiveNetworkAcls
+    publicNetworkAccess: effectivePublicNetworkAccess
+    networkInjections: effectiveNetworkInjections
     disableLocalAuth: true
   }
-  
+}
+
+// Account reference. Used as parent for the project, model deployments, and
+// capability host so the downstream wiring is identical regardless of whether
+// the account was just created (newAiAccount) or pre-existed. Children carry
+// dependsOn: [newAiAccount] so they wait for creation in the new branch and
+// no-op the dependency in the existing branch.
+resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' existing = {
+  name: resolvedAccountName
+
   @batchSize(1)
   resource seqDeployments 'deployments' = [
     for dep in (deployments??[]): {
@@ -136,6 +239,9 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
         model: dep.model
       }
       sku: dep.sku
+      dependsOn: [
+        newAiAccount
+      ]
     }
   ]
 
@@ -151,6 +257,7 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
     }
     dependsOn: [
       seqDeployments
+      newAiAccount
     ]
   }
 
@@ -158,10 +265,15 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
     name: 'agents'
     properties: {
       capabilityHostKind: 'Agents'
-      // IMPORTANT: this is required to enable hosted agents deployment
-      // if no BYO Net is provided
-      enablePublicHostingEnvironment: true
+      // For BYO VNet or managed network, the account is reached over the
+      // private endpoint or Microsoft-managed network -- enablePublicHostingEnvironment
+      // is false so the hosting environment honors the network isolation.
+      // Public mode keeps it true so the agent can be invoked from anywhere.
+      enablePublicHostingEnvironment: !isByoVnet && !isManaged
     }
+    dependsOn: [
+      newAiAccount
+    ]
   }
 }
 
