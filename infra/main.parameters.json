@@ -70,6 +70,48 @@
       },
       "existingAppInsightsConnectionName": {
         "value": "${APPLICATIONINSIGHTS_CONNECTION_NAME=}"
+      },
+      "useExistingAiAccount": {
+        "value": "${USE_EXISTING_AI_ACCOUNT=false}"
+      },
+      "existingAiAccountResourceId": {
+        "value": "${AZURE_EXISTING_AI_ACCOUNT_RESOURCE_ID=}"
+      },
+      "networkMode": {
+        "value": "${FOUNDRY_NETWORK_MODE=none}"
+      },
+      "existingVnetResourceId": {
+        "value": "${FOUNDRY_VNET_RESOURCE_ID=}"
+      },
+      "vnetName": {
+        "value": "${FOUNDRY_VNET_NAME=vnet-${AZURE_ENV_NAME}}"
+      },
+      "vnetAddressPrefix": {
+        "value": "${FOUNDRY_VNET_ADDRESS_PREFIX=}"
+      },
+      "agentSubnetName": {
+        "value": "${FOUNDRY_AGENT_SUBNET_NAME=agent-subnet}"
+      },
+      "agentSubnetPrefix": {
+        "value": "${FOUNDRY_AGENT_SUBNET_PREFIX=}"
+      },
+      "peSubnetName": {
+        "value": "${FOUNDRY_PE_SUBNET_NAME=pe-subnet}"
+      },
+      "peSubnetPrefix": {
+        "value": "${FOUNDRY_PE_SUBNET_PREFIX=}"
+      },
+      "clientIpAllowList": {
+        "value": "${FOUNDRY_CLIENT_IP_ALLOW_LIST=[]}"
+      },
+      "disablePublicNetworkAccess": {
+        "value": "${FOUNDRY_DISABLE_PUBLIC_NETWORK_ACCESS=false}"
+      },
+      "existingDnsZones": {
+        "value": "${FOUNDRY_EXISTING_DNS_ZONES={}}"
+      },
+      "dnsZonesSubscriptionId": {
+        "value": "${FOUNDRY_DNS_ZONES_SUBSCRIPTION_ID=}"
       }
-    }
+  }
 }

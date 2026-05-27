@@ -116,6 +116,12 @@ You'll find agent samples in the [`foundry-samples` repo](https://github.com/mic
 
 This template does not use specific models. The model deployments are a parameter of the template. Each model may not be available in all Azure regions. Check for [up-to-date region availability of Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/reference/region-support) and in particular the [Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/concepts/model-region-support?tabs=global-standard).
 
+### Networking
+
+By default the Foundry account is publicly reachable (no VNet). The template also supports a Microsoft-managed network (`managed`) and a bring-your-own VNet posture (`byo-vnet`) with a delegated agent subnet, a private endpoint on the account, and private DNS zones. You can also point the template at an existing Foundry account.
+
+All of these are opt-in via `azd env set NAME VALUE` between `azd init` and `azd provision`. See [docs/networking.md](docs/networking.md) for the workflow, recipes (managed network, BYO VNet, existing account, hub-spoke DNS reuse), and troubleshooting.
+
 ## Resource Clean-up
 
 To prevent incurring unnecessary charges, it's important to clean up your Azure resources after completing your work with the application.

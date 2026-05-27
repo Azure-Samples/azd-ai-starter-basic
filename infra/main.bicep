@@ -110,6 +110,61 @@ param existingApplicationInsightsResourceId string = ''
 @description('Optional. Name of an existing Application Insights connection on the Foundry project. If provided, no new App Insights or connection will be created.')
 param existingAppInsightsConnectionName string = ''
 
+// ---------- Existing account ----------
+
+@description('When true, reference an existing AI Foundry account (created out of band) instead of creating a new one. A new project (and its deployments, capability host, and connections) is still created on that account. Implied true when existingAiAccountResourceId is non-empty. The account MUST live in the SAME resource group as this deployment.')
+param useExistingAiAccount bool = false
+
+@description('Optional. Full ARM resource ID of an existing AI Foundry (Microsoft.CognitiveServices/accounts, kind=AIServices) account to reuse. The account name is parsed from this ID. The account MUST live in the SAME resource group as this deployment.')
+param existingAiAccountResourceId string = ''
+
+// ---------- Network ----------
+
+@description('Network mode for the AI Foundry account: none (public, default) | managed (Microsoft-managed network) | byo-vnet (customer-delegated agent subnet + private endpoint on the account).')
+@allowed([
+  'none'
+  'managed'
+  'byo-vnet'
+])
+param networkMode string = 'none'
+
+@description('Optional. Full ARM resource ID of an existing VNet to reuse. The agent subnet must already be delegated to Microsoft.App/environments. Empty creates a new VNet in this resource group. Cross-RG / cross-subscription safe.')
+param existingVnetResourceId string = ''
+
+@description('Name of the new VNet (created when networkMode is byo-vnet and existingVnetResourceId is empty).')
+param vnetName string = 'vnet-${environmentName}'
+
+@description('VNet address prefix. Empty defaults to 192.168.0.0/16. Ignored for existing VNets.')
+param vnetAddressPrefix string = ''
+
+@description('Agent subnet name (delegated to Microsoft.App/environments).')
+param agentSubnetName string = 'agent-subnet'
+
+@description('Agent subnet prefix. Empty derives 192.168.0.0/24 from the default VNet prefix. Ignored for existing VNets.')
+param agentSubnetPrefix string = ''
+
+@description('Private endpoint subnet name.')
+param peSubnetName string = 'pe-subnet'
+
+@description('PE subnet prefix. Empty derives 192.168.1.0/24 from the default VNet prefix. Ignored for existing VNets.')
+param peSubnetPrefix string = ''
+
+@description('JSON array of IPv4 addresses or CIDR ranges allowed to reach the AI Foundry account data plane while public access is enabled (used only when networkMode is byo-vnet).')
+param clientIpAllowList array = []
+
+@description('When true, set publicNetworkAccess=Disabled on the AI Foundry account. Requires running azd from inside the VNet (or via a private VPN/peer). Only relevant when networkMode is byo-vnet.')
+param disablePublicNetworkAccess bool = false
+
+@description('Map of existing private DNS zone FQDN -> resource group name. Empty value means create a new zone in the current RG. Only consulted when networkMode is byo-vnet.')
+param existingDnsZones object = {
+  'privatelink.services.ai.azure.com': ''
+  'privatelink.openai.azure.com': ''
+  'privatelink.cognitiveservices.azure.com': ''
+}
+
+@description('Subscription ID where the existing private DNS zones live. Empty defaults to the current subscription. Accepts a bare GUID or /subscriptions/<guid> path.')
+param dnsZonesSubscriptionId string = ''
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -126,6 +181,32 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
+// ---------- Network derivations ----------
+
+var isByoVnet = networkMode == 'byo-vnet'
+
+// VNet (only created/referenced when networkMode is byo-vnet). When isByoVnet
+// is false, this module is skipped entirely and downstream consumers fall
+// back to empty strings.
+module vnet 'core/networking/vnet.bicep' = if (isByoVnet) {
+  scope: rg
+  name: 'vnet'
+  params: {
+    location: aiDeploymentsLocation
+    tags: tags
+    vnetName: vnetName
+    existingVnetResourceId: existingVnetResourceId
+    vnetAddressPrefix: vnetAddressPrefix
+    agentSubnetName: agentSubnetName
+    agentSubnetPrefix: agentSubnetPrefix
+    peSubnetName: peSubnetName
+    peSubnetPrefix: peSubnetPrefix
+  }
+}
+
+#disable-next-line BCP318
+var agentSubnetIdValue = isByoVnet ? vnet.outputs.agentSubnetId : ''
+
 // Build dependent resources array conditionally
 // Check if ACR already exists in the user-provided array to avoid duplicates
 // Also skip if user provided an existing container registry endpoint or connection name
@@ -138,7 +219,7 @@ var dependentResources = shouldCreateAcr ? union(aiProjectDependentResources, [
   }
 ]) : aiProjectDependentResources
 
-// AI Project module — only when creating new resources
+// AI Project module -- only when creating new resources
 module aiProject 'core/ai/ai-project.bicep' = if (!useExistingAiProject) {
   scope: rg
   name: 'ai-project'
@@ -149,6 +230,8 @@ module aiProject 'core/ai/ai-project.bicep' = if (!useExistingAiProject) {
     principalId: principalId
     principalType: principalType
     existingAiAccountName: aiFoundryResourceName
+    useExistingAiAccount: useExistingAiAccount
+    existingAiAccountResourceId: existingAiAccountResourceId
     deployments: aiProjectDeployments
     connections: aiProjectConnections
     connectionCredentials: aiProjectConnectionCreds
@@ -162,10 +245,40 @@ module aiProject 'core/ai/ai-project.bicep' = if (!useExistingAiProject) {
     existingApplicationInsightsConnectionString: existingApplicationInsightsConnectionString
     existingApplicationInsightsResourceId: existingApplicationInsightsResourceId
     existingAppInsightsConnectionName: existingAppInsightsConnectionName
+    networkMode: networkMode
+    agentSubnetId: agentSubnetIdValue
+    clientIpAllowList: clientIpAllowList
+    disablePublicNetworkAccess: disablePublicNetworkAccess
   }
 }
 
-// Existing project module — read-only reference when reusing an existing Foundry project
+// Private endpoint + DNS for the AI Foundry account (only when networkMode is
+// byo-vnet). Created after the account exists so the PE can target it.
+// Skipped for the read-only existing-project path (existing-ai-project.bicep)
+// since that flow expects PE/DNS to already be in place.
+module accountPeDns 'core/networking/private-endpoint-and-dns.bicep' = if (isByoVnet && !useExistingAiProject) {
+  scope: rg
+  name: 'account-pe-dns'
+  params: {
+    location: aiDeploymentsLocation
+    #disable-next-line BCP318
+    foundryAccountName: aiProject.outputs.aiServicesAccountName
+    #disable-next-line BCP318
+    foundryAccountId: aiProject.outputs.accountId
+    #disable-next-line BCP318
+    vnetName: isByoVnet ? vnet.outputs.vnetName : ''
+    #disable-next-line BCP318
+    vnetSubscriptionId: isByoVnet ? vnet.outputs.vnetSubscriptionId : subscription().subscriptionId
+    #disable-next-line BCP318
+    vnetResourceGroupName: isByoVnet ? vnet.outputs.vnetResourceGroupName : rg.name
+    peSubnetName: peSubnetName
+    suffix: uniqueString(subscription().id, resourceGroupName, location)
+    existingDnsZones: existingDnsZones
+    dnsZonesSubscriptionId: empty(dnsZonesSubscriptionId) ? subscription().subscriptionId : dnsZonesSubscriptionId
+  }
+}
+
+// Existing project module -- read-only reference when reusing an existing Foundry project
 module existingAiProject 'core/ai/existing-ai-project.bicep' = if (useExistingAiProject) {
   scope: rg
   name: 'existing-ai-project'
@@ -182,7 +295,7 @@ module existingAiProject 'core/ai/existing-ai-project.bicep' = if (useExistingAi
   }
 }
 
-// ACR for existing project — create when hosted agents need a registry but the existing project has none
+// ACR for existing project -- create when hosted agents need a registry but the existing project has none
 var shouldCreateAcrForExistingProject = useExistingAiProject && shouldCreateAcr
 var acrConnectionName = 'acr-${uniqueString(subscription().id, resourceGroupName, location)}'
 
@@ -242,3 +355,14 @@ output AZURE_STORAGE_ACCOUNT_NAME string = useExistingAiProject ? existingAiProj
 
 // Connections
 output AI_PROJECT_CONNECTION_IDS_JSON string = useExistingAiProject ? string(existingAiProject.outputs.connectionIds) : string(aiProject.outputs.connectionIds)
+
+// Network
+output FOUNDRY_NETWORK_MODE string = networkMode
+#disable-next-line BCP318
+output AZURE_VNET_ID string = isByoVnet ? vnet.outputs.vnetId : ''
+#disable-next-line BCP318
+output AZURE_VNET_NAME string = isByoVnet ? vnet.outputs.vnetName : ''
+#disable-next-line BCP318
+output AZURE_AGENT_SUBNET_ID string = isByoVnet ? vnet.outputs.agentSubnetId : ''
+#disable-next-line BCP318
+output AZURE_PE_SUBNET_ID string = isByoVnet ? vnet.outputs.peSubnetId : ''
