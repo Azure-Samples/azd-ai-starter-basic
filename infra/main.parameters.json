@@ -20,6 +20,9 @@
       "aiDeploymentsLocation": {
         "value": "${AZURE_AI_DEPLOYMENTS_LOCATION}"
       },
+      "resourceTokenSalt": {
+        "value": "${AZD_RESOURCE_TOKEN_SALT=}"
+      },
       "principalId": {
         "value": "${AZURE_PRINCIPAL_ID}"
       },

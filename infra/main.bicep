@@ -53,6 +53,9 @@ param principalId string
 @description('Principal type of user or app')
 param principalType string
 
+@description('Optional salt to diversify resource names across project recreations')
+param resourceTokenSalt string = ''
+
 @description('Optional. Name of an existing AI Services account within the resource group. If not provided, a new one will be created.')
 param aiFoundryResourceName string = ''
 
@@ -162,6 +165,7 @@ module aiProject 'core/ai/ai-project.bicep' = if (!useExistingAiProject) {
     existingApplicationInsightsConnectionString: existingApplicationInsightsConnectionString
     existingApplicationInsightsResourceId: existingApplicationInsightsResourceId
     existingAppInsightsConnectionName: existingAppInsightsConnectionName
+    resourceTokenSalt: resourceTokenSalt
   }
 }
 

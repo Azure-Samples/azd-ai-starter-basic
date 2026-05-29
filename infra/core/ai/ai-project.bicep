@@ -6,7 +6,10 @@ param tags object = {}
 @description('Main location for the resources')
 param location string
 
-var resourceToken = uniqueString(subscription().id, resourceGroup().id, location)
+@description('Optional salt to diversify resource names across project recreations')
+param resourceTokenSalt string = ''
+
+var resourceToken = empty(resourceTokenSalt) ? uniqueString(subscription().id, resourceGroup().id, location) : uniqueString(subscription().id, resourceGroup().id, location, resourceTokenSalt)
 
 @description('Name of the project')
 param aiFoundryProjectName string
