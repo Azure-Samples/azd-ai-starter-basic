@@ -9,10 +9,10 @@ param location string
 @description('Optional salt to diversify resource names across project recreations')
 param resourceTokenSalt string = ''
 
-var resourceToken = empty(resourceTokenSalt) ? uniqueString(subscription().id, resourceGroup().id, location) : uniqueString(subscription().id, resourceGroup().id, location, resourceTokenSalt)
-
 @description('Name of the project')
 param aiFoundryProjectName string
+
+var resourceToken = empty(resourceTokenSalt) ? uniqueString(subscription().id, resourceGroup().id, location, aiFoundryProjectName) : uniqueString(subscription().id, resourceGroup().id, location, aiFoundryProjectName, resourceTokenSalt)
 
 param deployments deploymentsType
 
@@ -209,7 +209,7 @@ module aiConnections './connection.bicep' = [for (connection, index) in connecti
 // Project scope is sufficient for creating/running agents and calling models via the project endpoint.
 resource localUserAzureAIUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: aiAccount::project
-  name: guid(subscription().id, resourceGroup().id, principalId, '53ca6127-db72-4b80-b1b0-d745d6d5456d')
+  name: guid(subscription().id, resourceGroup().id, principalId, '53ca6127-db72-4b80-b1b0-d745d6d5456d', aiFoundryProjectName)
   properties: {
     principalId: principalId
     principalType: principalType
