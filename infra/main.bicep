@@ -113,6 +113,12 @@ param existingApplicationInsightsResourceId string = ''
 @description('Optional. Name of an existing Application Insights connection on the Foundry project. If provided, no new App Insights or connection will be created.')
 param existingAppInsightsConnectionName string = ''
 
+@description('Enable creation of an activity-protocol digital worker: a Managed Agent Identity Blueprint (MAIB) and an Azure Bot Service with a Teams channel. Defaults to false so non-activity agents are unaffected.')
+param enableDigitalWorker bool = false
+
+@description('Foundry agent name. Used to name the digital worker blueprint and bot, and to build the bot messaging endpoint. Required when enableDigitalWorker is true.')
+param agentName string = ''
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -205,6 +211,42 @@ module acrForExistingProject 'core/host/acr.bicep' = if (shouldCreateAcrForExist
   }
 }
 
+// Digital worker (activity protocol): MAIB + Bot Service. Created only when
+// enableDigitalWorker is true and a new Foundry project is being provisioned.
+var createDigitalWorker = enableDigitalWorker && !useExistingAiProject && !empty(agentName)
+var digitalWorkerMaibName = '${agentName}-maib'
+var digitalWorkerBotName = '${agentName}-bot'
+var digitalWorkerFoundryEndpoint = useExistingAiProject ? '' : (createDigitalWorker ? aiProject.outputs.FOUNDRY_PROJECT_ENDPOINT : '')
+
+// 1. UMI used to run the MAIB creation deployment script (data-plane op).
+module digitalWorkerUmi 'core/agents/deployment-script-umi.bicep' = if (createDigitalWorker) {
+  scope: rg
+  name: 'digital-worker-umi'
+}
+
+// 2. Create the Managed Agent Identity Blueprint in the Foundry project.
+module digitalWorkerMaib 'core/agents/maib-creation-script.bicep' = if (createDigitalWorker) {
+  scope: rg
+  name: 'digital-worker-maib'
+  params: {
+    uamiResourceId: digitalWorkerUmi!.outputs.uamiResourceId
+    azureAIProjectEndpoint: digitalWorkerFoundryEndpoint
+    maibName: digitalWorkerMaibName
+  }
+}
+
+// 3. Create the Azure Bot Service (Teams channel) targeting the agent's activity endpoint.
+module digitalWorkerBot 'core/agents/botservice.bicep' = if (createDigitalWorker) {
+  scope: rg
+  name: 'digital-worker-bot'
+  params: {
+    botName: digitalWorkerBotName
+    displayName: '${agentName} Bot'
+    msaAppId: digitalWorkerMaib!.outputs.blueprintClientId
+    endpoint: '${digitalWorkerFoundryEndpoint}/agents/${agentName}/endpoint/protocols/activityProtocol?api-version=2025-05-15-preview'
+  }
+}
+
 // Resources
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_AI_ACCOUNT_ID string = useExistingAiProject ? existingAiProject.outputs.accountId : aiProject.outputs.accountId
@@ -246,3 +288,8 @@ output AZURE_STORAGE_ACCOUNT_NAME string = useExistingAiProject ? existingAiProj
 
 // Connections
 output AI_PROJECT_CONNECTION_IDS_JSON string = useExistingAiProject ? string(existingAiProject.outputs.connectionIds) : string(aiProject.outputs.connectionIds)
+
+// Digital worker (activity protocol)
+output MAIB_NAME string = createDigitalWorker ? digitalWorkerMaibName : ''
+output AGENT_IDENTITY_BLUEPRINT_ID string = createDigitalWorker ? digitalWorkerMaib!.outputs.blueprintClientId : ''
+output AGENT_NAME string = agentName

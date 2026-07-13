@@ -73,6 +73,12 @@
       },
       "existingAppInsightsConnectionName": {
         "value": "${APPLICATIONINSIGHTS_CONNECTION_NAME=}"
+      },
+      "enableDigitalWorker": {
+        "value": "${ENABLE_DIGITAL_WORKER=false}"
+      },
+      "agentName": {
+        "value": "${AGENT_NAME=}"
       }
     }
 }
